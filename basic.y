@@ -86,28 +86,30 @@ command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);printf("This is d comment\n")
 	| PRINT expr				{sprintf($$,"%s%s",$1,$2); nodeG = TRUE;  astGen(COMMAND_AST, PRINT_AST, NULL, NULL);}
 	| PRINT text				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, PRINT_TEXT_AST, NULL, $2);}
 	| INPUT VAR				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, INPUT_AST, $2, NULL); printf("input var %s\n", $2);}
-	| ifstmt				{strcpy($$,$1); nodeG = TRUE; astGen(IFSTMT_AST,IFTHEN_AST, NULL, NULL); }
+	| ifstmt				{strcpy($$,$1);}
 	| WHILE IF expr				{sprintf($$,"%s %s %s",$1,$2, $3);}
 	| END WHILE				{sprintf($$,"%s %s",$1,$2);}
 	;
 
-ifstmt	: IF expr THEN INTEGER		{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("ifstmt : %s \n",$$);}
-	| ELSEIF expr THEN INTEGER	{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("else if: %s \n",$$);}
-	| ELSE THEN INTEGER		{sprintf($$,"%s %s %d",$1,$2,$3);printf("else: %s \n",$$);}
+ifstmt	: IF expr THEN INTEGER		{astGen(IFSTMT_AST, IFTHEN_AST, NULL, NULL); nodeG = TRUE; sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("ifstmt : %s \n",$$);}
+	| ELSEIF expr THEN INTEGER	{astGen(IFSTMT_AST, IFELSE_AST, NULL, NULL); nodeG = TRUE; sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("else if: %s \n",$$);}
+	| ELSE THEN INTEGER		{astGen(IFSTMT_AST, ELSE_AST, NULL, NULL); nodeG = TRUE; sprintf($$,"%s %s %d",$1,$2,$3);printf("else: %s \n",$$);}
 	| ENDIF				{sprintf($$,"%s",$1);}
 	;	
 	
 text	: STRING			{strcpy($$,$1);printf("stirng bison\n");}
 	;
 
-expr	: expr GREATER expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" > bison \n");}
-	| expr SMALLER expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" < bison \n");}
-	| expr GREATEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" >= bison \n");}
-	| expr SMALLEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" <= bison \n");}
-	| expr EQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" = bison \n");}
-	| expr INEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" <> bison \n");}
-	| expr OR expr2			{sprintf($$,"%s %s %s",$1,$2,$3);printf("or\n");}
-	| expr AND expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf("and\n");}
+
+
+expr	: expr GREATER expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" > bison \n"); exprNodeGen(GREAT_AST, NULL, BINARY, 0);}
+	| expr SMALLER expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" < bison \n"); exprNodeGen(SMALLER_AST, NULL, BINARY, 0);}
+	| expr GREATEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" >= bison \n"); exprNodeGen(GREATEQUAL_AST, NULL, BINARY, 0);}
+	| expr SMALLEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" <= bison \n"); exprNodeGen(SMALLEQUAL_AST, NULL, BINARY, 0);}
+	| expr EQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" = bison \n"); exprNodeGen(EQUAL_AST, NULL, BINARY, 0);}
+	| expr INEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" <> bison \n"); exprNodeGen(INEQUAL_AST, NULL, BINARY, 0);} 
+	| expr OR expr2			{sprintf($$,"%s %s %s",$1,$2,$3);printf("or\n"); exprNodeGen(OR_AST, NULL, BINARY, 0);}
+	| expr AND expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf("and\n"); exprNodeGen(AND_AST, NULL, BINARY, 0);}
 	| expr2				
 	;
 
