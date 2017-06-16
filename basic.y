@@ -137,6 +137,7 @@ factor	: '(' expr ')'			{sprintf($$,"(%s)",$2);printf("parenthesis\n");}
 	| VAR				{sprintf($$,"%s",$1);printf("variable factor %s\n", $1);
 					exprNodeGen(0, $1, VARIABLE, 0); printf("name %s", $1);}
 	| INTEGER			{char str[20]; int i = $1; printf("ddd %d\n", i); sprintf(str, "%d", i), $$ = strdup(str); printf("dd %d\n", $1); printf("factor int %s\n", $$);}	
+	| VAR '[' expr bracket	{nodeG2 = FALSE;  printf("array elem"); exprNodeGen(0, 0, ARRAYELEM, 0);}
 	;
 
 INTEGER : INTEGER DIGIT			{printf("integer %d\n", $1);}

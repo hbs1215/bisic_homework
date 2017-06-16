@@ -46,6 +46,7 @@
 #define UNARY	77
 #define OPERAND 78
 #define VARIABLE 79
+#define ARRAYELEM 80
 
 //decalaration
 typedef struct ast_node ast_node;
@@ -57,6 +58,7 @@ typedef struct expr_node expr_node;
 typedef struct arrayElem arrayElem;
 typedef struct loop_range loop_range;
 
+void arrayBoundCheck(int tableIndex, int arrayIndex);
 void triple_sort();
 void exprNodeGen(int op, char* varName, int opType, int value);
 int calculator(ast_node* curAST, int count, int lineNum);
@@ -184,7 +186,13 @@ void exprNodeGen(int op, char* varName, int opType, int value)
 		break;
 	case VARIABLE:
 		temp->elem[temp->count].varName = strdup(varName);
-		printf("checck 1\n");
+		//printf("checck 1\n");
+		temp->elem[temp->count].opType = opType;
+		break;
+
+	case ARRAYELEM:
+		temp->elem[temp->count].varName = strdup(varName);
+		//printf("checck 1\n");
 		temp->elem[temp->count].opType = opType;
 		break;
 	default: temp->count--;
@@ -404,12 +412,13 @@ void divideZero(int num)
 
 int calculator(ast_node* curAST, int count, int lineNum)
 {
+	int arrayRefer = FALSE;
 	int operand[999] = {0};
 	int result =0;
 	int type = curAST->subtype;
 	expr_node temp;
 	int tempResult = 0;
-
+	int arrayExist = 0;
 	if(count == 0)
 		temp = curAST->expr1;
 	else if(count == 1)
@@ -463,6 +472,18 @@ int calculator(ast_node* curAST, int count, int lineNum)
 					}
 					operand[oprCount] = *varValue;
 					oprCount++;
+				}else if(temp.elem[i].opType == ARRAYELEM)
+				{
+					arrayExist = findArrayName(temp.elem[i].varName, lineNum);
+					printf("array elem\n");
+					//printf("return success\n");
+					if(arrayExist < 0)
+					{
+						printf("Array cannot found\n");
+						exit(1);
+					}
+					arrayRefer = TRUE;
+					printf("array Refer : %d\n", arrayRefer);
 				}else if(temp.elem[i].opType == BINARY)
 				{
 					printf("opr1: %d, opr2: %d\n", operand[oprCount-2], operand[oprCount-1]);
@@ -546,9 +567,18 @@ int calculator(ast_node* curAST, int count, int lineNum)
 	{
 		printf("check calculator2\n");
 	}
-	printf("checkc\n");
-	result = operand[0];
+	printf("array Refer : %d\n", arrayRefer);
+	if(arrayRefer == TRUE)
+	{
+		int index = operand[1];
+		arrayBoundCheck(arrayExist, index);
+		result = table_1[arrayExist].elem[index].value;
 
+	}else
+	{
+		printf("checkc\n");
+		result = operand[0];
+	}
 	return result;
 }
 
@@ -728,8 +758,7 @@ void updateVar(int index, int value)
 	printf("update var name :%s, value: %d\n", table_0[index].varName, table_0[index].value);
 }
 
-
-void updateArray(int tableIndex, int arrayIndex, int value)
+void arrayBoundCheck(int tableIndex, int arrayIndex)
 {
 	if(arrayIndex >= table_1[tableIndex].size)
 	{
@@ -737,6 +766,11 @@ void updateArray(int tableIndex, int arrayIndex, int value)
 		printf("Error: index out of range\n");
 		exit(1);
 	}
+}
+
+void updateArray(int tableIndex, int arrayIndex, int value)
+{
+	arrayBoundCheck(tableIndex, arrayIndex);
 	table_1[tableIndex].elem[arrayIndex].value = value;
 	table_1[tableIndex].elem[arrayIndex].index = arrayIndex;
 	table_1[tableIndex].used = TRUE;
