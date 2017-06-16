@@ -86,8 +86,15 @@ command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);printf("This is d comment\n")
 	| ifstmt				{strcpy($$,$1); nodeG = TRUE; astGen(IFSTMT_AST,IFTHEN_AST, NULL, NULL); }
 	;
 
-ifstmt	: IF expr THEN INTEGER		{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("if then \n");}
-	;
+ifstmt	: IF expr THEN INTEGER		{printf("if then integer\n");}
+	| IF expr THEN			{printf("if then \n");}
+	| ELSEIF expr THEN INTEGER	{printf("elseif then integer\n");}
+	| ELSEIF expr THEN		{printf("elseif then\n");}
+	| ELSE INTEGER			{printf("else integer\n");}
+	| ELSE 				{strcpy($$,$1);printf("else\n");}
+	| ENDIF				{strcpy($$,$1);printf("end if\n");}
+	;	
+
 text	: STRING			{strcpy($$,$1);printf("stirng bison\n");}
 	;
 
@@ -160,7 +167,6 @@ int main(int argc, char** argv)
 	}	
 
 	yyparse();
-	initVarTable_0();	
 	char user_input[20];
 	int line;
 	
@@ -180,6 +186,7 @@ int main(int argc, char** argv)
 			show_line(atoi(user_input));
 		}
 		else if(!strcmp(user_input,"RUN") ){
+			initVarTable_0();	
 			runProgram();	
 		}
 		else if(!strcmp(user_input,"QUIT") )

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-
+//2:25 
 #define COMMAND_AST		4
 #define GOTO_AST		5
 #define LET_AST1		10
@@ -111,6 +111,7 @@ struct triple
    ast_node* CommandAst;
    char* string;
    triple* next;
+   int index;
 };
 
 //variable
@@ -169,17 +170,16 @@ void printExpr()
 
 void make_triple(int line_num, char* command)
 {
-	triple_table_size++;
-   	triple* new_triple = malloc(sizeof(triple));
-   	new_triple->num = line_num;
-   	new_triple->string = command;
-   	triple_table = realloc(triple_table, sizeof(triple)*(triple_table_size+1));
-	triple_table[triple_table_size-1] = new_triple;
-	new_triple->CommandAst = curAST;
-
-	printf("\ntriple_info: %d %s\n",new_triple->num, new_triple->string);
+   triple_table_size++;
+      triple* new_triple = malloc(sizeof(triple));
+      new_triple->num = line_num;
+      new_triple->string = command;
+      triple_table = realloc(triple_table, sizeof(triple)*(triple_table_size+1));
+   triple_table[triple_table_size-1] = new_triple;
+   new_triple->CommandAst = curAST;
+   new_triple->index = triple_table_size - 1;
+   printf("\ntriple_info: %d %s\n",new_triple->num, new_triple->string);
 }
-
 
 void astGen(int type, int subtype, char* commandVar, char* text)
 {
@@ -229,17 +229,38 @@ void astGen(int type, int subtype, char* commandVar, char* text)
 }
 
 
-int* findVar(char* name, int lineNum)
+int* findVar(char* varName, int lineNum)
 {
 	int i = 0;
 	int* result = NULL;
+	
+	int name[30];
+	int j = 0;
+	while((varName[j] > 64 && varName[j] < 91)||(varName[j]>96 && varName[j] <123))
+	{
+		name[j] = varName[j];
+		j++;
+	}
+	name[j] = '\0';
+	j++;
+
 	for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1; i++)
 	{
-		table_0[i].varName[strlen(table_0[i].varName)-1] = '\0';
-		name[strlen(name)-1] = '\0';
-		if(strcmp(table_0[i].varName, name) ==0 && table_0[i].lineNum <= lineNum)
+	//	int j = 0;
+	//	while((table_0[i].varName[j] >= 65 && table_0[i].varName[j] <=90) 
+	//		&& table_0[i]varName[j] >= 97 &&  )
+	//	{	printf("table: %d ", table_0[i].varName[j]);	j++;}
+	//	printf("find var j : %d\n", j);
+	//	table_0[i].varName[j-1] = '\0';
+	//	j = 0;
+	//	printf("\n");
+	//	while(name[j] != '\0')
+	//	{	printf("name: %d ", name[j]);	j++;}
+	//	printf("find var j2: %d\n", j);
+	//	name[j-1] = '\0';
+		if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
 		{
-
+				
 			if(table_0[i].used == FALSE)
 				return result;
 			else
@@ -286,7 +307,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 			int i = 0;
 			int oprCount = 0;
 			int j = 0;
-
+			
 			if(temp.count ==1)
 			{
 				if(temp.elem[0].opType == OPERAND)
@@ -294,7 +315,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 					printf("count = 1, LET value : %d\n", temp.elem[0].value);
 					return temp.elem[0].value;
 				}else if(temp.elem[0].opType == VARIABLE)
-				{
+				{	
 					printf("find var %s\n", table_0[0].varName);
 					int* varValue = findVar(temp.elem[0].varName, lineNum);
 					if(varValue == NULL)
@@ -304,11 +325,11 @@ int calculator(ast_node* curAST, int count, int lineNum)
 					}else
 						return *varValue;
 				}
-			}
+			}		
 			for(i = 0;i < temp.count; i++)
 			{
-
-
+		
+				
 				if(temp.elem[i].opType == OPERAND)
 				{
 					operand[oprCount] = temp.elem[i].value;
@@ -327,12 +348,12 @@ int calculator(ast_node* curAST, int count, int lineNum)
 				}else if(temp.elem[i].opType == BINARY)
 				{
 					printf("opr1: %d, opr2: %d\n", operand[oprCount-2], operand[oprCount-1]);
-
+					
 					switch(temp.elem[i].op)
 					{
 						case PLUS_AST: tempResult = operand[oprCount-2] + operand[oprCount-1];
 							printf("cal plus %d, %d\n", operand[oprCount-2], operand[oprCount-1]);
-
+							
 							break;
 						case MINUS_AST:tempResult = operand[oprCount-2] - operand[oprCount-1];
 							break;
@@ -453,76 +474,67 @@ void show_document()
 	int i;
 	if(triple_table_size>0)
 	{
-		triple_sort();
-		/*for(i=0;i<triple_table_size;i++)
-		{
-			triple_table[i]->num=(i+1)*LINEINTERVAL;
-
-		}*/
 		for(i=0;i<triple_table_size;i++)
 		{
-			printf("%d %s\n",triple_table[i]->num, triple_table[i]->string);
+			printf("%s\n",triple_table[i]->string);
+
 		}
 	}
+
+
 }
 
 void show_line(int request_num)
 {
 	int i;
-	int find = 0;
 	if(triple_table_size>0)
 	{
 		for(i=0;i<triple_table_size;i++)
 		{
 			if(request_num==triple_table[i]->num)
-			{
-				printf("%d %s\n",request_num, triple_table[i]->string);
-				find = 1;
-			}
+				printf("%s\n",triple_table[i]->string);
+
 		}
 	}
-	if(find == 0)
-		printf("Error: no matching line\n");
+
 
 }
-
-void triple_sort()
-{
-	int i,j,k;
-
-	triple * temp;
-	for(i=0;i<triple_table_size;i++)
-	{
-		for(j=i;j<triple_table_size;j++)
-		{
-			if(triple_table[i]->num > triple_table[j]->num)
-			{
-				temp = triple_table[i];
-				triple_table[i] = triple_table[j];
-				triple_table[j] = temp;
-			}
-		}
-	}
-}
-
 
 int registerVar(char* varName, int lineNum)
 {
 	int i = 0;
 	int* result = NULL;
+	int name[30];
+	int j = 0;
+	while((varName[j] > 64 && varName[j] < 91)||(varName[j]>96 && varName[j] <123))
+	{
+		name[j] = varName[j];
+		j++;
+	}
+	name[j] = '\0';
+	j++;
+
 	for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1 ; i++)
 	{
-		if(strcmp(table_0[i].varName, varName) ==0 && table_0[i].lineNum <= lineNum)
+	//	while(varName[j] != '\0')
+	//	{	printf("reg name: %d ", varName[j]);	j++;}
+	//	table_0[i].varName[strlen(table_0[i].varName)-1] = '\0';
+	//	varName[strlen(varName)-1] = '\0';
+		if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
 		{
 			return i;
 		}
 	}
-	strcpy(table_0[i].varName, varName);
+	strcpy(table_0[i].varName, (const char*)name);
+	printf("count var %d\n", i);
+	int k = 0;
+	while(k<j)
+		printf("reg check %d\n", table_0[i].varName[k++]);
 	table_0[i].lineNum = lineNum;
 	table_0[i].value = 0;
 	table_0[i].used = FALSE;
 	return i;
-
+		
 }
 
 void updateVar(int index, int value)
@@ -536,8 +548,13 @@ void initVarTable_0()
 {
 	int i = 0;
 	for(;i<999;i++)
+	{
 		table_0[i].used = -1;
+		table_0[i].value = 0;
+		memset(table_0[i].varName, 0, 30);
+	}
 }
+
 
 void runProgram()
 {
@@ -552,28 +569,28 @@ void runProgram()
 		temp_ast = triple_table[i]->CommandAst;
 		int type = temp_ast->type;
 		int subtype = temp_ast->subtype;
-
 		if(type == COMMAND_AST)
 		{
 			switch(subtype)
 			{
 			case GOTO_AST:
-
+							
 			break;
 			case LET_AST1:
 				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num);
 				result = calculator(temp_ast, 0, triple_table[i]->num);
-				printf("result let : %d  %d\n ", result, triple_table[i]->num);
+			//	printf("result let : %d  %d\n ", result, triple_table[i]->num);
 				updateVar(varTableIdx, result);
-				printf("variable reg  %s\n", table_0[0].varName);
+			//	printf("variable reg  %s\n", table_0[0].varName);
 				break;
 			case LET_AST2:
-
+					
 			break;
 			case DIM_AST:
-
+					
 			break;
 			case INPUT_AST: varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num);
+					printf("intput");
 					scanf("%d", &result);
 					updateVar(varTableIdx, result);
 			break;
@@ -582,58 +599,25 @@ void runProgram()
 			break;
 			case PRINT_AST:
 				result = calculator(temp_ast, 0, triple_table[i]->num);
-				printf("\n\n%d\n\n", result);
-			break;
+				printf("\n\n%d\n\n", result); 	
+			break;	
 			}
-		}
-		else if(type == IFSTMT_AST)
+		}else if(type == IFSTMT_AST)
 		{
 
 
-		}
-		else if(type == DECL_AST)
+
+		}else if(type == DECL_AST)
 		{
 
-		}
-		else
+		}else
 		{
 			printf("run programm error1 %d\n", type);
 			return;
 		}
-		i++;
-	}
-}
-
-int line_checker(int linenum)
-{
-	int i;
-	int find = 0;
-	if(triple_table_size>0)
-	{
-		for(i=0;i<triple_table_size;i++)
-		{
-			if(linenum==triple_table[i]->num)
-			{
-				find = 1;
-			}
-		}
-	}
-
-	if(find == 0)
-	{
-		printf("RUNTIME Error: undefined line number\n");
-		return -1;
-	}
-	else return 1;
-}
-
-int integer_checker(char* num_str)
-{
-	int num = atoi(num_str);
-	if(num<-2147483648||num>2147483647)
-	{
-		printf("RUNTIME Error: integer overflow\n");
-		return -1;
-	}
-	else return 1;
+	
+		i++;	
+	}	
+	
+	
 }

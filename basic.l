@@ -11,7 +11,7 @@ newLine		\\n
 close		\]		
 lineNum		^[0-9]+[[:space:]]
 digit		[0-9]+
-variable	[a-zA-Z]+
+variable	[a-zA-Z]+[[:space:]]
 plus		"+"
 minus		"-"
 multiply	"*"
@@ -61,6 +61,8 @@ space		[[:space:]]+
 
 <comment>{rstop}	{BEGIN(INITIAL); return *yytext;}
 <comment>{rinside}	{return COMMENT;}
+
+{input}{space}*			{yylval.string = strdup(yytext); return INPUT;}
 
 {divide}{space}*		{ yylval.string = strdup(yytext); return DIVIDE;}
 {plus}{space}*			{ yylval.string = strdup(yytext); return PLUS;}
