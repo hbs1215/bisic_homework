@@ -1,11 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-<<<<<<< HEAD
 //5:25 
-=======
-//2:25
->>>>>>> origin/master
 #define COMMAND_AST		4
 #define GOTO_AST		5
 #define LET_AST1		10
