@@ -170,7 +170,7 @@ int main(int argc, char** argv)
 	}	
 	else
 	{
-		printf("Open %s",filename);
+		printf("Open \"%s\"\n",filename);
 	}
 	yyparse();
 	
