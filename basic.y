@@ -82,7 +82,7 @@ command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);printf("This is d comment\n")
 	| GOTO INTEGER				{sprintf($$,"%s%d",$1,$2); nodeG = TRUE; printf("goto statement number: %d\n", $2); astGen(COMMAND_AST, GOTO_AST, NULL, NULL); printf("check3\n");}
 	| LET VAR EQUAL expr			{sprintf($$,"%s%s%s%s",$1,$2,$3,$4);printf("this is assginment statemnt"); nodeG = TRUE; nodeG2 = FALSE; astGen(COMMAND_AST, LET_AST1, $2, NULL); printf("let var: %s\n", $2);}
 	| LET VAR '[' expr bracket EQUAL expr	{sprintf($$,"%s %s [%s] %s %s",$1,$2,$4,$6,$7);printf("2d array statment\n"); nodeG2 = FALSE; astGen(COMMAND_AST, LET_AST2, $2, NULL); printf("let 2 var: %s\n", $2);}
-	| DIM VAR AS '[' expr bracket		{sprintf($$,"DIM %s %s [%s]",$2,$3,$5); nodeG = TRUE; astGen(COMMAND_AST, DIM_AST, $2, NULL); printf("dim %s\n", $2);}
+	| DIM VAR AS '[' expr bracket		{sprintf($$,"DIM %s %s [%s]",$2,$3,$5); nodeG = TRUE; nodeG2 = FALSE; astGen(COMMAND_AST, DIM_AST, $2, NULL); printf("dim %s\n", $2);}
 	| PRINT expr				{sprintf($$,"%s%s",$1,$2); nodeG = TRUE;  astGen(COMMAND_AST, PRINT_AST, NULL, NULL);}
 	| PRINT text				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, PRINT_TEXT_AST, NULL, $2);}
 	| INPUT VAR				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, INPUT_AST, $2, NULL); printf("input var %s\n", $2);}
@@ -192,6 +192,7 @@ int main(int argc, char** argv)
 		}
 		else if(!strcmp(user_input,"RUN") ){
 			initVarTable_0();
+			initVarTable_1();
 			runProgram();	
 		}
 		else if(!strcmp(user_input,"QUIT") )

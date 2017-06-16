@@ -64,8 +64,10 @@ void initVarTable_0();
 void show_document();
 void show_line();
 void updateVar(int index, int value);
+void updateArray(int tableIndex, int arrayIndex, int value);
 void printExpr();
 void initVarTable_1();
+int findArrayName(char* varName, int lineNum);
 
 
 //struct
@@ -263,20 +265,21 @@ int* findVar(char* varName, int lineNum)
 	name[j] = '\0';
 	j++;
 
+	
 	for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1; i++)
 	{
-	//	int j = 0;
-	//	while((table_0[i].varName[j] >= 65 && table_0[i].varName[j] <=90)
-	//		&& table_0[i]varName[j] >= 97 &&  )
-	//	{	printf("table: %d ", table_0[i].varName[j]);	j++;}
-	//	printf("find var j : %d\n", j);
-	//	table_0[i].varName[j-1] = '\0';
-	//	j = 0;
-	//	printf("\n");
-	//	while(name[j] != '\0')
-	//	{	printf("name: %d ", name[j]);	j++;}
-	//	printf("find var j2: %d\n", j);
-	//	name[j-1] = '\0';
+		//	int j = 0;
+		//	while((table_0[i].varName[j] >= 65 && table_0[i].varName[j] <=90)
+		//		&& table_0[i]varName[j] >= 97 &&  )
+		//	{	printf("table: %d ", table_0[i].varName[j]);	j++;}
+		//	printf("find var j : %d\n", j);
+		//	table_0[i].varName[j-1] = '\0';
+		//	j = 0;
+		//	printf("\n");
+		//	while(name[j] != '\0')
+		//	{	printf("name: %d ", name[j]);	j++;}
+		//	printf("find var j2: %d\n", j);
+		//	name[j-1] = '\0';
 		if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
 		{
 
@@ -290,7 +293,49 @@ int* findVar(char* varName, int lineNum)
 		}
 	}
 	return result;
+
 }
+
+int findArrayName(char* varName, int lineNum)
+{
+	int i = 0;
+
+	int name[30];
+	int j = 0;
+	while((varName[j] > 64 && varName[j] < 91)||(varName[j]>96 && varName[j] <123))
+	{
+		name[j] = varName[j];
+		j++;
+	}
+	name[j] = '\0';
+	j++;
+
+	
+	for(i=0 ; i< 999 && table_1[i].used != -1; i++)
+	{
+		printf("\n\nhi\n\n");
+		//	int j = 0;
+		//	while((table_0[i].varName[j] >= 65 && table_0[i].varName[j] <=90)
+		//		&& table_0[i]varName[j] >= 97 &&  )
+		//	{	printf("table: %d ", table_0[i].varName[j]);	j++;}
+		//	printf("find var j : %d\n", j);
+		//	table_0[i].varName[j-1] = '\0';
+		//	j = 0;
+		//	printf("\n");
+		//	while(name[j] != '\0')
+		//	{	printf("name: %d ", name[j]);	j++;}
+		//	printf("find var j2: %d\n", j);
+		//	name[j-1] = '\0';
+		printf("compare %s\n", table_1[i].arrayName);
+		if(strcmp(table_1[i].arrayName, (const char*)name) ==0 && table_1[i].lineNum <= lineNum)
+		{
+			return i;
+		}
+	}
+	return -1;
+
+}
+
 
 void divideZero(int num)
 {
@@ -331,7 +376,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 			{
 				if(temp.elem[0].opType == OPERAND)
 				{
-					printf("count = 1, LET value : %d\n", temp.elem[0].value);
+					printf("count = %d, LET value : %d\n", count, temp.elem[0].value);
 					return temp.elem[0].value;
 				}else if(temp.elem[0].opType == VARIABLE)
 				{
@@ -597,7 +642,7 @@ int registerVar(char* varName, int lineNum, int dim)
 			}
 		}
 
-		for(i = 0; i<999 && table_1[i].used != -1;i++)
+		for(i = 0; i<999 && table_1[i].used != -1; i++)
 		{
 			if(strcmp(table_1[i].arrayName, (const char*)name) ==0 && table_1[i].lineNum <= lineNum)
 			{
@@ -622,6 +667,20 @@ void updateVar(int index, int value)
 	table_0[index].value = value;
 	table_0[index].used = TRUE;
 	printf("update var name :%s, value: %d\n", table_0[index].varName, table_0[index].value);
+}
+
+
+void updateArray(int tableIndex, int arrayIndex, int value)
+{
+	if(arrayIndex >= table_1[tableIndex].size)
+	{
+		printf("size: %d, arrayIndex: %d\n", arrayIndex, table_1[tableIndex].size);
+		printf("Error: index out of range\n");
+		exit(1);
+	}
+	table_1[tableIndex].elem[arrayIndex].value = value;
+	table_1[tableIndex].elem[arrayIndex].index = arrayIndex;
+	table_1[tableIndex].used = TRUE;
 }
 
 void initVarTable_0()
@@ -663,6 +722,7 @@ void runProgram()
 		int subtype = temp_ast->subtype;
 		if(type == COMMAND_AST)
 		{
+			printf("\n\n\n======%d=======\n\n", temp_ast->subtype);
 			switch(subtype)
 			{
 			case GOTO_AST:
@@ -677,7 +737,19 @@ void runProgram()
 			//	printf("variable reg  %s\n", table_0[0].varName);
 				break;
 			case LET_AST2:
-
+				printf("let ast2 name %s\n\n", temp_ast->varName);
+				varTableIdx = findArrayName(temp_ast->varName, triple_table[i]->num);
+				if(varTableIdx < 0)
+				{
+					printf("Error: No declared array\n");
+					exit(1);
+				}else
+				{
+					int index = 0, value = 0;
+					index = calculator(temp_ast, 0, triple_table[i]->num);
+					value = calculator(temp_ast, 1, triple_table[i]->num);
+					updateArray(varTableIdx, index, value);
+				}
 			break;
 			case DIM_AST:
 				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 2);
