@@ -1,3 +1,3 @@
 23 LET A = 5
-25 PRINT A+5
+25 PRINT A + 5
 27 PRINT "hi"
