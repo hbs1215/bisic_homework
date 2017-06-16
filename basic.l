@@ -47,7 +47,7 @@ if		(IF[[:space:]])
 then		(THEN[[:space:]])
 else		(ELSE[[:space:]])
 elseif		(ELSEIF[[:space:]])
-
+endif		(ENDIF[[:space:]])
 
 
 dquote		\"
@@ -91,8 +91,8 @@ space		[[:space:]]+
 {if}{space}*			{ yylval.string = strdup(yytext); return IF;}
 {then}{space}*			{ yylval.string = strdup(yytext); return THEN;}
 {else}{space}*			{ yylval.string = strdup(yytext); return ELSE;}
-
 {elseif}{space}*		{ yylval.string = strdup(yytext); return ELSEIF;}
+{endif}{space}*			{ yylval.string = strdup(yytext); return ENDIF;}
 
 {print_command}{space}*		{ yylval.string = strdup(yytext); return PRINT;}
 

@@ -46,6 +46,7 @@ extern FILE * yyin;
 %token <string> THEN
 %token <string> ELSEIF
 %token <string> ELSE
+%token <string> ENDIF
 
 %token <digit> DIGIT
 %token <string> STRING
@@ -66,7 +67,6 @@ extern FILE * yyin;
 %type <string> term
 %type <string> ifstmt
 %type <string> bracket
-%type <string> ifterm
 
 %%
 
@@ -91,13 +91,11 @@ command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);printf("This is d comment\n")
 	| END WHILE				{sprintf($$,"%s %s",$1,$2);}
 	;
 
-ifstmt	: ifstmt ifterm	ELSE THEN INTEGER	{sprintf($$,"%s %s %s %s %d",$1,$2,$3,$4,$5);printf("ifstmt : %s \n",$$);}
-	| IF expr THEN INTEGER			{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("if then \n");}
-	;
-	
-ifterm	: ifterm ELSEIF expr THEN INTEGER	{sprintf($$,"%s %s %s %s %d",$1,$2,$3,$4,$5);printf("ifterm : %s \n",$$);}
-	| ELSEIF expr THEN INTEGER		{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("ifstmt : %s \n",$$);}
-	;
+ifstmt	: IF expr THEN INTEGER		{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("ifstmt : %s \n",$$);}
+	| ELSEIF expr THEN INTEGER	{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("else if: %s \n",$$);}
+	| ELSE THEN INTEGER		{sprintf($$,"%s %s %d",$1,$2,$3);printf("else: %s \n",$$);}
+	| ENDIF				{sprintf($$,"%s",$1);}
+	;	
 	
 text	: STRING			{strcpy($$,$1);printf("stirng bison\n");}
 	;
