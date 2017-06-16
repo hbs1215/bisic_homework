@@ -15,6 +15,10 @@
 #define IFELSE_AST		40
 #define ELSEIF_AST		45
 
+#define WHILE_AST		46
+#define WHILE_IF_AST	47
+#define END_WHILE		48
+
 #define EXPR_AST		50
 #define DECL_AST		55
 
@@ -217,7 +221,7 @@ void astGen(int type, int subtype, char* commandVar, char* text)
 	curAST->type = type;
 	curAST->subtype = subtype;
 
-	if(curAST->type == COMMAND_AST || curAST->type == IFSTMT_AST)
+	if(curAST->type == COMMAND_AST || curAST->type == IFSTMT_AST || curAST->type == WHILE_AST)
 	{
 		switch(curAST->subtype)
 		{
@@ -249,10 +253,15 @@ void astGen(int type, int subtype, char* commandVar, char* text)
 			break;
 		case PRINT_AST : curAST->expr1 = *curNode1;
 			break;
+		case WHILE_IF_AST : curAST->expr1 = *curNode1;
+			break;
+		case END_WHILE :
+			break;
+		
 		}
-	}else if(curAST->type == DECL_AST)
+	}else
 	{
-		printf("function");
+		printf("ast gen check: 4");
 		//function
 	}
 	printf("check2\n");
@@ -835,7 +844,7 @@ int line_checker(int linenum)
 		{
 			if(linenum<loop_range_table[i]->end_num&&linenum>loop_range_table[i]->start_num)
 			{
-				printf("RUNTIME Error: undefined line \n");
+				printf("RUNTIME Error: GOTO cannot into While loop\n");
 				return -1;
 			}
 		}
