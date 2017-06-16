@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//2:25 
+//5:25 
 #define COMMAND_AST		4
 #define GOTO_AST		5
 #define LET_AST1		10
