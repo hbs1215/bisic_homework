@@ -65,7 +65,7 @@ void show_document();
 void show_line();
 void updateVar(int index, int value);
 void printExpr();
-
+void initVarTable_1();
 
 
 //struct
@@ -89,6 +89,8 @@ typedef struct varTable_1
 	int size;
 	char arrayName[30];
 	int lineNum;
+	int used;
+
 }varTable_1;
 	
 
@@ -544,6 +546,8 @@ void triple_sort()
 	}
 }
 
+
+//variable table index return
 int registerVar(char* varName, int lineNum, int dim)
 {
 	int i = 0;
@@ -558,26 +562,58 @@ int registerVar(char* varName, int lineNum, int dim)
 	name[j] = '\0';
 	j++;
 
-	for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1 ; i++)
+	//dim == 2 -> table 0, 1 both should be checked
+	if(dim == 1)
 	{
-	//	while(varName[j] != '\0')
-	//	{	printf("reg name: %d ", varName[j]);	j++;}
-	//	table_0[i].varName[strlen(table_0[i].varName)-1] = '\0';
-	//	varName[strlen(varName)-1] = '\0';
-		if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
+		for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1 ; i++)
 		{
-			return i;
+		//	while(varName[j] != '\0')
+		//	{	printf("reg name: %d ", varName[j]);	j++;}
+		//	table_0[i].varName[strlen(table_0[i].varName)-1] = '\0';
+		//	varName[strlen(varName)-1] = '\0';
+			if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
+			{
+				return i;
+			}
 		}
+		strcpy(table_0[i].varName, (const char*)name);
+		printf("count var %d\n", i);
+		int k = 0;
+		while(k<j)
+			printf("reg check %d\n", table_0[i].varName[k++]);
+		table_0[i].lineNum = lineNum;
+		table_0[i].value = 0;
+		table_0[i].used = FALSE;
+		return i;	
 	}
-	strcpy(table_0[i].varName, (const char*)name);
-	printf("count var %d\n", i);
-	int k = 0;
-	while(k<j)
-		printf("reg check %d\n", table_0[i].varName[k++]);
-	table_0[i].lineNum = lineNum;
-	table_0[i].value = 0;
-	table_0[i].used = FALSE;
-	return i;
+	else if(dim == 2)
+	{
+		//이미 존재하는지 체크
+		for(i=0 ; i< 999 && table_0[i].used != -1 ; i++)
+		{
+			if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
+			{
+				return -1;
+			}
+		}
+
+		for(i = 0; i<999 && table_1[i].used != -1;i++)
+		{
+			if(strcmp(table_1[i].arrayName, (const char*)name) ==0 && table_1[i].lineNum <= lineNum)
+			{
+				return -1;
+			}
+		}
+	//없으면 생성
+		strcpy(table_1[i].arrayName, (const char*)name);
+		table_1[i].lineNum = lineNum;
+		table_1[i].used = FALSE;
+		return i;
+	}else
+	{
+		printf("regster variable error\n");
+		exit(1);
+	}
 
 }
 
@@ -599,6 +635,18 @@ void initVarTable_0()
 	}
 }
 
+
+void initVarTable_1()
+{
+	int i = 0;
+	for(;i<999;i++)
+	{
+		table_1[i].used = -1;
+		table_1[i].size = 0;
+		if(table_1[i].elem != NULL)
+			free(table_1[i].elem);
+	}
+}
 
 void runProgram()
 {
@@ -632,7 +680,27 @@ void runProgram()
 
 			break;
 			case DIM_AST:
+				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 2);
+				if(varTableIdx == -1)
+				{
+					printf("Error: Variable is redeclared\n");
+					exit(1);					
+				}else
+				{
+					int size = 0;
+					size = calculator(temp_ast, 0, triple_table[i]->num);
+					if(size > 0)
+					{
+						table_1[varTableIdx].elem = (arrayElem*)(malloc(sizeof(arrayElem)*size));
+					}else
+					{
+						printf("Error: Array size should be more than 1");
+						exit(1);
+					}
+					table_1[varTableIdx].size = size;
 
+					printf("size: %d success 1d array", table_1[varTableIdx].size);
+				}
 			break;
 			case INPUT_AST: varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1);
 					printf("intput");
