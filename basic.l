@@ -21,8 +21,8 @@ equal		"="
 inequal		"<>"
 and		"&"
 or		"|"
-greater		"<"
-smaller		">"
+greater		">"
+smaller		"<"
 
 negation	"!"
 
@@ -58,7 +58,7 @@ space		[[:space:]]+
 
 %%
 {lineNum}	{yylval.digit = atoi(yytext); return LINENUM;}
-{newLine}	{printf("new line\n");yylval.string = strdup(yytext); return NEWLINE;}
+{newLine}	{yylval.string = strdup(yytext); return NEWLINE;}
 {digit}		{yylval.digit = atoi(yytext); return DIGIT;}
 {rstart}	{BEGIN(comment); return REM;}
 {goto}{space}*		{yylval.string = strdup(yytext);  return GOTO;}
@@ -98,12 +98,12 @@ space		[[:space:]]+
 
 {variable}{space}*	{yylval.string = strdup(yytext); return VAR;}
 
-{space}*{close}{space}*	{printf("close lex\n"); yylval.string = strdup(yytext); return CLOSE;}
+{space}*{close}{space}*	{ yylval.string = strdup(yytext); return CLOSE;}
 
 
-{space}			{printf("space\n");yylval.string = strdup(yytext);}
+{space}			{yylval.string = strdup(yytext);}
 {string}		{yylval.string = strdup(yytext); return STRING;}
-.			{printf("default??\n"); yylval.string = strdup(yytext); return *yytext;} 		
+.			{ yylval.string = strdup(yytext); return *yytext;} 		
 %%
 
 int yywrap(void)

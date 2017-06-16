@@ -74,77 +74,68 @@ program	: line
 	| line program			
 	; 
 
-line	: LINENUM command 			{printf("line: %d %s",$1,$2);make_triple($1,$2);}
+line	: LINENUM command 			{make_triple($1,$2);}
 	| NEWLINE				
 	;
 
-command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);printf("This is d comment\n");}	
-	| GOTO INTEGER				{sprintf($$,"%s%d",$1,$2); nodeG = TRUE; printf("goto statement number: %d\n", $2); astGen(COMMAND_AST, GOTO_AST, NULL, NULL); printf("check3\n");}
-	| LET VAR EQUAL expr			{sprintf($$,"%s%s%s%s",$1,$2,$3,$4);printf("this is assginment statemnt"); nodeG = TRUE; nodeG2 = FALSE; astGen(COMMAND_AST, LET_AST1, $2, NULL); printf("let var: %s\n", $2);}
-	| LET VAR '[' expr bracket EQUAL expr	{sprintf($$,"%s %s [%s] %s %s",$1,$2,$4,$6,$7);printf("2d array statment\n"); nodeG2 = FALSE; astGen(COMMAND_AST, LET_AST2, $2, NULL); printf("let 2 var: %s\n", $2);}
-	| DIM VAR AS '[' expr bracket		{sprintf($$,"DIM %s %s [%s]",$2,$3,$5); nodeG = TRUE; nodeG2 = FALSE; astGen(COMMAND_AST, DIM_AST, $2, NULL); printf("dim %s\n", $2);}
+command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);}	
+	| GOTO INTEGER				{sprintf($$,"%s%d",$1,$2); nodeG = TRUE;  astGen(COMMAND_AST, GOTO_AST, NULL, NULL); }
+	| LET VAR EQUAL expr			{sprintf($$,"%s%s%s%s",$1,$2,$3,$4); nodeG = TRUE; nodeG2 = FALSE; astGen(COMMAND_AST, LET_AST1, $2, NULL); }
+	| LET VAR '[' expr bracket EQUAL expr	{sprintf($$,"%s %s [%s] %s %s",$1,$2,$4,$6,$7);nodeG2 = FALSE; astGen(COMMAND_AST, LET_AST2, $2, NULL);}
+	| DIM VAR AS '[' expr bracket		{sprintf($$,"DIM %s %s [%s]",$2,$3,$5); nodeG = TRUE; nodeG2 = FALSE; astGen(COMMAND_AST, DIM_AST, $2, NULL);}
 	| PRINT expr				{sprintf($$,"%s%s",$1,$2); nodeG = TRUE;  astGen(COMMAND_AST, PRINT_AST, NULL, NULL);}
 	| PRINT text				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, PRINT_TEXT_AST, NULL, $2);}
-	| INPUT VAR				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, INPUT_AST, $2, NULL); printf("input var %s\n", $2);}
-	| ifstmt				{strcpy($$,$1); nodeG = TRUE; astGen(IFSTMT_AST,IFTHEN_AST, NULL, NULL); }
+	| INPUT VAR				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, INPUT_AST, $2, NULL); }
+	| ifstmt				{strcpy($$,$1); nodeG = TRUE;}
 	| WHILE IF expr				{sprintf($$,"%s %s %s",$1,$2, $3);nodeG = TRUE; astGen(WHILE_AST,WHILE_IF_AST, NULL, NULL); }
 	| END WHILE				{sprintf($$,"%s %s",$1,$2);nodeG = TRUE; astGen(WHILE_AST,END_WHILE, NULL, NULL); }
 	;
 
-ifstmt	: IF expr THEN INTEGER		{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("ifstmt : %s \n",$$);}
-	| ELSEIF expr THEN INTEGER	{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("else if: %s \n",$$);}
-	| ELSE THEN INTEGER		{sprintf($$,"%s %s %d",$1,$2,$3);printf("else: %s \n",$$);}
+ifstmt	: IF expr THEN INTEGER		{astGen(IFSTMT_AST, IFTHEN_AST, NULL, NULL); nodeG = TRUE; sprintf($$,"%s %s %s %d",$1,$2,$3,$4);}
+	| ELSEIF expr THEN INTEGER	{astGen(IFSTMT_AST, IFELSE_AST, NULL, NULL); nodeG = TRUE;  sprintf($$,"%s %s %s %d",$1,$2,$3,$4);}
+	| ELSE THEN INTEGER		{astGen(IFSTMT_AST, ELSE_AST, NULL, NULL); nodeG = TRUE; sprintf($$,"%s %s %d",$1,$2,$3);}
 	| ENDIF				{sprintf($$,"%s",$1);}
 	;	
 	
-text	: STRING			{strcpy($$,$1);printf("stirng bison\n");}
+text	: STRING			{strcpy($$,$1);}
 	;
 
-expr	: expr GREATER expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" > bison \n");}
-	| expr SMALLER expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" < bison \n");}
-	| expr GREATEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" >= bison \n");}
-	| expr SMALLEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" <= bison \n");}
-	| expr EQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" = bison \n");}
-	| expr INEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf(" <> bison \n");}
-	| expr OR expr2			{sprintf($$,"%s %s %s",$1,$2,$3);printf("or\n");}
-	| expr AND expr2		{sprintf($$,"%s %s %s",$1,$2,$3);printf("and\n");}
+expr	: expr GREATER expr2		{sprintf($$,"%s %s %s",$1,$2,$3); exprNodeGen(GREAT_AST, NULL, BINARY, 0);}
+	| expr SMALLER expr2		{sprintf($$,"%s %s %s",$1,$2,$3); exprNodeGen(SMALLER_AST, NULL, BINARY, 0);}
+	| expr GREATEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);exprNodeGen(GREATEQUAL_AST, NULL, BINARY, 0);}
+	| expr SMALLEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3);exprNodeGen(SMALLEQUAL_AST, NULL, BINARY, 0);}
+	| expr EQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3); exprNodeGen(EQUAL_AST, NULL, BINARY, 0);}
+	| expr INEQUAL expr2		{sprintf($$,"%s %s %s",$1,$2,$3); exprNodeGen(INEQUAL_AST, NULL, BINARY, 0);}
+	| expr OR expr2			{sprintf($$,"%s %s %s",$1,$2,$3);exprNodeGen(OR_AST, NULL, BINARY, 0);}
+	| expr AND expr2		{sprintf($$,"%s %s %s",$1,$2,$3); exprNodeGen(AND_AST, NULL, BINARY, 0);}
 	| expr2				
 	;
 
 
-expr2	: expr2 PLUS term		{sprintf($$,"%s%s%s",$1,$2,$3);printf("expr2+ %s, %s, %s\n",$1,$2,$3);
-					exprNodeGen(PLUS_AST, NULL, BINARY, 0); printf("node2 : %d\n", nodeG2);}
-	| expr2 MINUS term 		{sprintf($$,"%s %s %s",$1,$2,$3);printf("-\n");
-					exprNodeGen(MINUS_AST, NULL, BINARY, 0);}
+expr2	: expr2 PLUS term		{sprintf($$,"%s%s%s",$1,$2,$3);	exprNodeGen(PLUS_AST, NULL, BINARY, 0); }
+	| expr2 MINUS term 		{sprintf($$,"%s %s %s",$1,$2,$3);	exprNodeGen(MINUS_AST, NULL, BINARY, 0);}
 	| term				
 	;
 
-term	: term DIVIDE factor		{printf("before sprintf $$: %s, $3 factor: %s\n", $$, $3); sprintf($$,"%s %s %s",$1,$2, $3); printf("divide $1 : %s\n", $1); printf("-- / %s -- \n", $$);
-					exprNodeGen(DIVIDE_AST, NULL, BINARY, 0);}
-	| term MULTI  factor		{sprintf($$,"%s %s %s",$1,$2,$3);printf("*\n");
-					exprNodeGen(MULTI_AST, NULL, BINARY, 0);}
-	| term MODULO factor		{sprintf($$,"%s %s %s",$1, $2, $3);printf("modulo\n");
-					exprNodeGen(MODULO_AST, NULL, BINARY, 0);}
+term	: term DIVIDE factor		{sprintf($$,"%s %s %s",$1,$2, $3); exprNodeGen(DIVIDE_AST, NULL, BINARY, 0);}
+	| term MULTI  factor		{sprintf($$,"%s %s %s",$1,$2,$3); exprNodeGen(MULTI_AST, NULL, BINARY, 0);}
+	| term MODULO factor		{sprintf($$,"%s %s %s",$1, $2, $3);	exprNodeGen(MODULO_AST, NULL, BINARY, 0);}
 	| factor			
 	;
 
-factor	: '(' expr ')'			{sprintf($$,"(%s)",$2);printf("parenthesis\n");}
+factor	: '(' expr ')'			{sprintf($$,"(%s)",$2);}
 	
-	| MINUS factor			{sprintf($$,"%s %s",$1,$2);printf("unary minus\n");
-					exprNodeGen(MINUS_AST, NULL, UNARY, 0); }
-	| NEGATION factor		{sprintf($$,"%s %s",$1,$2);printf("unary negation\n");
-					exprNodeGen(NEGATION_AST, NULL, UNARY, 0);}
-	| VAR				{sprintf($$,"%s",$1);printf("variable factor %s\n", $1);
-					exprNodeGen(0, $1, VARIABLE, 0); printf("name %s", $1);}
-	| INTEGER			{char str[20]; int i = $1; printf("ddd %d\n", i); sprintf(str, "%d", i), $$ = strdup(str); printf("dd %d\n", $1); printf("factor int %s\n", $$);}	
-	| VAR '[' expr bracket	{nodeG2 = FALSE;  printf("array elem"); exprNodeGen(0, 0, ARRAYELEM, 0);}
+	| MINUS factor			{sprintf($$,"%s %s",$1,$2); exprNodeGen(MINUS_AST, NULL, UNARY, 0); }
+	| NEGATION factor		{sprintf($$,"%s %s",$1,$2);	exprNodeGen(NEGATION_AST, NULL, UNARY, 0);}
+	| VAR				{sprintf($$,"%s",$1);	exprNodeGen(0, $1, VARIABLE, 0); }
+	| INTEGER			{char str[20]; int i = $1; sprintf(str, "%d", i), $$ = strdup(str); }
 	;
 
-INTEGER : INTEGER DIGIT			{printf("integer %d\n", $1);}
-	| DIGIT				{printf("digit: %d\n", $1); exprNodeGen(0, NULL, OPERAND, $1);}
+INTEGER : INTEGER DIGIT			
+	| DIGIT				{exprNodeGen(0, NULL, OPERAND, $1);}
 	;
 
-bracket : CLOSE				{sprintf($$,"%s",$1);printf("close\n"); nodeG = TRUE; nodeG2 = TRUE; printf("hi\n");}
+bracket : CLOSE				{sprintf($$,"%s",$1);nodeG = TRUE; nodeG2 = TRUE; }
 	;
 %%
 
@@ -152,6 +143,7 @@ bracket : CLOSE				{sprintf($$,"%s",$1);printf("close\n"); nodeG = TRUE; nodeG2 
 int yyerror(char const* s)
 {
 	fprintf(stderr, "%s\n", s);
+	exit(1);
 }
 
 
@@ -195,6 +187,7 @@ int main(int argc, char** argv)
 		else if(!strcmp(user_input,"RUN") ){
 			initVarTable_0();
 			initVarTable_1();
+			
 			runProgram();	
 		}
 		else if(!strcmp(user_input,"QUIT") )

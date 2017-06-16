@@ -57,25 +57,31 @@ typedef struct element element;
 typedef struct expr_node expr_node;
 typedef struct arrayElem arrayElem;
 typedef struct loop_range loop_range;
+typedef struct whileVar whileVar;
 
 void arrayBoundCheck(int tableIndex, int arrayIndex);
 void triple_sort();
 void exprNodeGen(int op, char* varName, int opType, int value);
-int calculator(ast_node* curAST, int count, int lineNum);
+int calculator(ast_node* curAST, int count, int lineNum, int whileFlag);
 void make_triple(int line_num, char* command);
 void astGen(int type, int subtype, char* commandVar, char* text);
 void divideZero(int num);
 int is_number(char* str);
-int registerVar(char* varName, int lineNum, int dim);
+int registerVar(char* varName, int lineNum, int dim, int whileFlag);
+int registerLocalVar(char* varName, int lineNum, int input);
 void runProgram();
 void initVarTable_0();
 void show_document();
 void show_line();
 void updateVar(int index, int value);
-void updateArray(int tableIndex, int arrayIndex, int value);
+void updateLocalVar(int index, int value);
+void updateArray(int tableIndex, int arrayIndex, int value, int whileFlag);
 void printExpr();
 void initVarTable_1();
+void initWhileVar();
 int findArrayName(char* varName, int lineNum);
+int* findVar(char* varName, int lineNum);
+int* findLocalVar(char* varName, int lineNum);
 
 
 //struct
@@ -103,6 +109,15 @@ typedef struct varTable_1
 
 }varTable_1;
 
+typedef struct whileVar
+{
+	int used;
+	char varName[30];
+	int value;
+	int lineNum;
+	int whileStart;
+	int whileEnd;
+}whileVar;
 
 typedef struct element
 {
@@ -151,6 +166,7 @@ struct triple
 //variable
 varTable_0 table_0[999];
 varTable_1 table_1[999];
+whileVar table_local[100];
 triple** triple_table;
 int triple_table_size=0;
 ast_node* curAST;
@@ -163,6 +179,24 @@ int nodeG2 = FALSE;
 
 loop_range** loop_range_table;
 int loop_range_size=0;
+
+void initWhileVar()
+{
+	int i = 0;
+	for(;i<100;i++)
+	{
+		if(table_local[i].used = -1)
+		{
+			memset(table_local[i].varName, 0, 30);
+		}
+		table_local[i].used = -1;
+		table_local[i].value = 0;
+
+
+	 	table_local[i].whileStart = 0;
+		table_local[i].whileEnd = 0;
+	}
+}
 
 //function
 void exprNodeGen(int op, char* varName, int opType, int value)
@@ -190,11 +224,6 @@ void exprNodeGen(int op, char* varName, int opType, int value)
 		temp->elem[temp->count].opType = opType;
 		break;
 
-	case ARRAYELEM:
-		temp->elem[temp->count].varName = strdup(varName);
-		//printf("checck 1\n");
-		temp->elem[temp->count].opType = opType;
-		break;
 	default: temp->count--;
 	break;
 	}
@@ -220,8 +249,7 @@ void make_triple(int line_num, char* command)
 	triple_table = realloc(triple_table, sizeof(triple)*(triple_table_size+1));
 	new_triple->CommandAst = curAST;
 	new_triple->index = triple_table_size - 1;
-	printf("\ntriple_info: %d %s\n",new_triple->num, new_triple->string);
-
+	//printf("\ntriple_info: %d %s\n",new_triple->num, new_triple->string);
 	if(new_triple->CommandAst->type==WHILE_AST)
 	{
 		if(new_triple->CommandAst->subtype==WHILE_IF_AST)
@@ -232,7 +260,7 @@ void make_triple(int line_num, char* command)
 			new_loop_range->match = 0;
 			loop_range_table = realloc(loop_range_table, sizeof(loop_range)*(loop_range_size+1));
 			loop_range_table[loop_range_size-1] = new_loop_range;
-			printf("\nloop_info: %d \n",new_loop_range->start_num);
+			//printf("\nloop_info: %d \n",new_loop_range->start_num);
 		}
 		else if(new_triple->CommandAst->subtype==END_WHILE)
 		{
@@ -245,10 +273,11 @@ void make_triple(int line_num, char* command)
 			{
 				loop_range_table[loop_range_size-1]->match = 1;
 				loop_range_table[loop_range_size-1]->end_num = line_num;
-				printf("\nloop_info: %d %d\n",loop_range_table[loop_range_size-1]->start_num, loop_range_table[loop_range_size-1]->end_num);
+				//printf("\nloop_info: %d %d\n",loop_range_table[loop_range_size-1]->start_num, loop_range_table[loop_range_size-1]->end_num);
 			}
 		}
 	}
+
 	triple_table[triple_table_size-1] = new_triple;
 }
 
@@ -263,7 +292,7 @@ void astGen(int type, int subtype, char* commandVar, char* text)
 		switch(curAST->subtype)
 		{
 		case GOTO_AST: curAST->integerLine = curNode1->elem[0].value;
-			printf("goto ast %d\n", curAST->integerLine);
+			//printf("goto ast %d\n", curAST->integerLine);
 			break;
 		case LET_AST1:
 			curAST->varName = strdup(commandVar);
@@ -293,7 +322,7 @@ void astGen(int type, int subtype, char* commandVar, char* text)
 			curAST->integerLine = curNode1->elem[curNode1->count-1].value;
 			break;						
 		case PRINT_TEXT_AST : curAST->string = strdup(text);
-			printf("ast comment: %s\n", curAST->string);
+			//printf("ast comment: %s\n", curAST->string);
 			break;
 		case PRINT_AST : curAST->expr1 = *curNode1;
 			break;
@@ -305,10 +334,10 @@ void astGen(int type, int subtype, char* commandVar, char* text)
 		}
 	}else
 	{
-		printf("ast gen check: 4");
+		//printf("ast gen check: 4");
 		//function
 	}
-	printf("check2\n");
+	//printf("check2\n");
 }
 
 
@@ -330,18 +359,7 @@ int* findVar(char* varName, int lineNum)
 
 	for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1; i++)
 	{
-		//	int j = 0;
-		//	while((table_0[i].varName[j] >= 65 && table_0[i].varName[j] <=90)
-		//		&& table_0[i]varName[j] >= 97 &&  )
-		//	{	printf("table: %d ", table_0[i].varName[j]);	j++;}
-		//	printf("find var j : %d\n", j);
-		//	table_0[i].varName[j-1] = '\0';
-		//	j = 0;
-		//	printf("\n");
-		//	while(name[j] != '\0')
-		//	{	printf("name: %d ", name[j]);	j++;}
-		//	printf("find var j2: %d\n", j);
-		//	name[j-1] = '\0';
+
 		if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
 		{
 
@@ -350,6 +368,42 @@ int* findVar(char* varName, int lineNum)
 			else
 			{
 				result = &table_0[i].value;
+				return result;
+			}
+		}
+	}
+	return result;
+
+}
+
+
+int* findLocalVar(char* varName, int lineNum)
+{
+	int i = 0;
+	int* result = NULL;
+
+	int name[30];
+	int j = 0;
+	while((varName[j] > 64 && varName[j] < 91)||(varName[j]>96 && varName[j] <123))
+	{
+		name[j] = varName[j];
+		j++;
+	}
+	name[j] = '\0';
+	j++;
+
+
+	for( ; i< 100 && table_local[i].used != -1; i++)
+	{
+
+		if(strcmp(table_local[i].varName, (const char*)name) ==0 && table_local[i].lineNum <= lineNum)
+		{
+
+			if(table_local[i].used == FALSE)
+				return result;
+			else
+			{
+				result = &table_local[i].value;
 				return result;
 			}
 		}
@@ -375,7 +429,7 @@ int findArrayName(char* varName, int lineNum)
 
 	for(i=0 ; i< 999 && table_1[i].used != -1; i++)
 	{
-		printf("\n\nhi\n\n");
+		//printf("\n\nhi\n\n");
 		//	int j = 0;
 		//	while((table_0[i].varName[j] >= 65 && table_0[i].varName[j] <=90)
 		//		&& table_0[i]varName[j] >= 97 &&  )
@@ -388,7 +442,7 @@ int findArrayName(char* varName, int lineNum)
 		//	{	printf("name: %d ", name[j]);	j++;}
 		//	printf("find var j2: %d\n", j);
 		//	name[j-1] = '\0';
-		printf("compare %s\n", table_1[i].arrayName);
+		//printf("compare %s\n", table_1[i].arrayName);
 		if(strcmp(table_1[i].arrayName, (const char*)name) ==0 && table_1[i].lineNum <= lineNum)
 		{
 			return i;
@@ -403,68 +457,90 @@ void divideZero(int num)
 {
 	if(num == 0)
 	{
-		printf("runtime error - divided by zero\n");
+		printf("Error: divided by zero\n");
 		exit(1);
 	}
 	else
 	{ return;}
 }
 
-int calculator(ast_node* curAST, int count, int lineNum)
+int calculator(ast_node* curAST, int count, int lineNum, int whileFlag)
 {
-	int arrayRefer = FALSE;
 	int operand[999] = {0};
 	int result =0;
 	int type = curAST->subtype;
 	expr_node temp;
 	int tempResult = 0;
 	int arrayExist = 0;
+
 	if(count == 0)
 		temp = curAST->expr1;
 	else if(count == 1)
 		temp = curAST->expr2;
 	else
-		printf("wrong value in calculator\n");
+		printf("Error: wrong value");
 
-	printf("cur AST type : %d\n", curAST->type);
-	if(curAST->type == COMMAND_AST || curAST->type == IFSTMT_AST)
+	//printf("cur AST type : %d\n", curAST->type);
+	if(curAST->type == COMMAND_AST || curAST->type == IFSTMT_AST || curAST->type ==  WHILE_AST)
 	{
-		if(type == LET_AST1||type==DIM_AST||type==IFTHEN_AST || type == IFELSE_AST ||type==PRINT_AST||type==LET_AST2|| type == GOTO_AST)
+		if(type == LET_AST1||type==DIM_AST||type==IFTHEN_AST || type == IFELSE_AST 
+			||type==PRINT_AST||type==LET_AST2|| type == GOTO_AST || type == WHILE_IF_AST)
 		{
 			int i = 0;
 			int oprCount = 0;
 			int j = 0;
-			printf("count :%d\n", temp.count);
+			//printf("count :%d\n", temp.count);
 			if(temp.count ==1)
 			{
 				if(temp.elem[0].opType == OPERAND)
 				{
-					printf("count = %d, LET value : %d\n", count, temp.elem[0].value);
+					//printf("count = %d, LET value : %d\n", count, temp.elem[0].value);
 					return temp.elem[0].value;
 				}else if(temp.elem[0].opType == VARIABLE)
 				{
 					printf("find var %s\n", table_0[0].varName);
-					int* varValue = findVar(temp.elem[0].varName, lineNum);
-					if(varValue == NULL)
+					if(whileFlag == FALSE)
 					{
-						printf("no matching variable -cmpile error 2\n");
-						exit(1);
+						int* varValue = findVar(temp.elem[0].varName, lineNum);
+						if(varValue == NULL)
+						{
+							printf("Error: no matching variable %s %dn", temp.elem[0].varName, whileFlag);
+							exit(1);
+						}else
+							return *varValue;
+	
 					}else
-						return *varValue;
+					{
+						int* varValue = findLocalVar(temp.elem[0].varName, lineNum);
+						if(varValue == NULL)
+						{
+							printf("Error: no matching variable %s %dn", temp.elem[0].varName, whileFlag);
+							exit(1);
+						}else
+							return *varValue;
+					}
 				}
 			}
 			for(i = 0;i < temp.count; i++)
 			{
-
-
 				if(temp.elem[i].opType == OPERAND)
 				{
 					operand[oprCount] = temp.elem[i].value;
 					oprCount++;
 				}else if(temp.elem[i].opType == VARIABLE)
 				{
-					int* varValue = findVar(temp.elem[i].varName, lineNum);
-					printf("return success\n");
+					int* varValue = NULL;
+					if(whileFlag == FALSE)
+					{
+						varValue = findVar(temp.elem[i].varName, lineNum);
+					}else
+					{
+						varValue = findVar(temp.elem[i].varName, lineNum);
+						if(varValue == NULL)
+							varValue = findLocalVar(temp.elem[i].varName, lineNum);	
+					}
+					
+					//printf("return success\n");
 					if(varValue == NULL)
 					{
 						printf("no matching value - compile error 1\n");
@@ -472,18 +548,6 @@ int calculator(ast_node* curAST, int count, int lineNum)
 					}
 					operand[oprCount] = *varValue;
 					oprCount++;
-				}else if(temp.elem[i].opType == ARRAYELEM)
-				{
-					arrayExist = findArrayName(temp.elem[i].varName, lineNum);
-					printf("array elem\n");
-					//printf("return success\n");
-					if(arrayExist < 0)
-					{
-						printf("Array cannot found\n");
-						exit(1);
-					}
-					arrayRefer = TRUE;
-					printf("array Refer : %d\n", arrayRefer);
 				}else if(temp.elem[i].opType == BINARY)
 				{
 					printf("opr1: %d, opr2: %d\n", operand[oprCount-2], operand[oprCount-1]);
@@ -491,7 +555,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 					switch(temp.elem[i].op)
 					{
 						case PLUS_AST: tempResult = operand[oprCount-2] + operand[oprCount-1];
-							printf("cal plus %d, %d\n", operand[oprCount-2], operand[oprCount-1]);
+				//			printf("cal plus %d, %d\n", operand[oprCount-2], operand[oprCount-1]);
 
 							break;
 						case MINUS_AST:tempResult = operand[oprCount-2] - operand[oprCount-1];
@@ -513,23 +577,23 @@ int calculator(ast_node* curAST, int count, int lineNum)
 								  else{
 									tempResult = 0;}
 								break;
-						case GREAT_AST: if(operand[oprCount-2] < operand[oprCount-1]){
+						case GREAT_AST: if(operand[oprCount-2] > operand[oprCount-1]){
 									tempResult = 1;}
 								else{
 									tempResult = 0;
 								}
 								break;
-						case SMALLER_AST: if(operand[oprCount-2] > operand[oprCount-1]){
+						case SMALLER_AST: if(operand[oprCount-2] < operand[oprCount-1]){
 									tempResult = 1;}
 								  else{
 									tempResult = 0;}
 								break;
-						case GREATEQUAL_AST: if(operand[oprCount-2] <= operand[oprCount-1])
+						case GREATEQUAL_AST: if(operand[oprCount-2] >= operand[oprCount-1])
 									tempResult = 1;
 								     else
 									tempResult = 0;
 								     break;
-						case SMALLEQUAL_AST:if(operand[oprCount-2] >= operand[oprCount-1])
+						case SMALLEQUAL_AST:if(operand[oprCount-2] <= operand[oprCount-1])
 									tempResult = 1;
 								    else
 									tempResult = 0;
@@ -539,7 +603,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 					}
 					oprCount = oprCount-2;
 					operand[oprCount] = tempResult;
-					printf("tempResult : %d", tempResult);
+			//		printf("tempResult : %d", tempResult);
 					oprCount++;
 
 				}else if(temp.elem[i].opType == UNARY)
@@ -565,20 +629,11 @@ int calculator(ast_node* curAST, int count, int lineNum)
 		}
 	}else
 	{
-		printf("check calculator2\n");
+		printf("Error\n");
 	}
-	printf("array Refer : %d\n", arrayRefer);
-	if(arrayRefer == TRUE)
-	{
-		int index = operand[1];
-		arrayBoundCheck(arrayExist, index);
-		result = table_1[arrayExist].elem[index].value;
 
-	}else
-	{
-		printf("checkc\n");
-		result = operand[0];
-	}
+	//printf("checkc\n");
+	result = operand[0];
 	return result;
 }
 
@@ -654,7 +709,10 @@ void show_line(int request_num)
 		}
 	}
 	if(find == 0)
+	{
 		printf("Error: no matching line\n");
+		exit(1);
+	}
 
 }
 
@@ -682,7 +740,108 @@ void triple_sort()
 
 
 //variable table index return
-int registerVar(char* varName, int lineNum, int dim)
+int registerVar(char* varName, int lineNum, int dim, int whileFlag)
+{
+	printf("check pt6\n");
+	int i = 0;
+	int* result = NULL;
+	int name[30];
+	int j = 0;
+	while((varName[j] > 64 && varName[j] < 91)||(varName[j]>96 && varName[j] <123))
+	{
+		name[j] = varName[j];
+		j++;
+	}
+	name[j] = '\0';
+	j++;
+printf("check pt7\n");
+	if(whileFlag == FALSE)
+	{
+			//dim == 2 -> table 0, 1 both should be checked
+		if(dim == 1)
+		{
+			printf("check pt8\n");
+			for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1 ; i++)
+			{
+			//	while(varName[j] != '\0')
+			//	{	printf("reg name: %d ", varName[j]);	j++;}
+			//	table_0[i].varName[strlen(table_0[i].varName)-1] = '\0';
+			//	varName[strlen(varName)-1] = '\0';
+				if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
+				{
+					return i;
+				}
+			}
+			strcpy(table_0[i].varName, (const char*)name);
+		//	printf("count var %d\n", i);
+			int k = 0;
+		//	while(k<j)
+			//	printf("reg check %d\n", table_0[i].varName[k++]);
+			table_0[i].lineNum = lineNum;
+			table_0[i].value = 0;
+			table_0[i].used = FALSE;
+			return i;
+		}
+		else if(dim == 2)
+		{
+			for(i=0 ; i< 999 && table_0[i].used != -1 ; i++)
+			{
+				if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
+				{
+					return -1;
+				}
+			}
+
+			for(i = 0; i<999 && table_1[i].used != -1; i++)
+			{
+				if(strcmp(table_1[i].arrayName, (const char*)name) ==0 && table_1[i].lineNum <= lineNum)
+				{
+					return -1;
+				}
+			}
+
+			strcpy(table_1[i].arrayName, (const char*)name);
+			table_1[i].lineNum = lineNum;
+			table_1[i].used = FALSE;
+			return i;
+		}else
+		{
+			printf("Error: variable caanot be declared\n");
+			exit(1);
+		}
+	}else if(whileFlag == TRUE)
+	{
+		printf("check pt57\n");
+		if(dim == 1)
+		{
+			printf("check pt8\n");
+			for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1 ; i++)
+			{
+				printf("check pt9\n");
+			//	while(varName[j] != '\0')
+			//	{	printf("reg name: %d ", varName[j]);	j++;}
+			//	table_0[i].varName[strlen(table_0[i].varName)-1] = '\0';
+			//	varName[strlen(varName)-1] = '\0';
+				printf("%s\n", (const char*)name);
+				if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
+				{
+					printf("check pt10\n");
+					return i;
+				}
+			}
+			return -1;
+		}
+		else
+		{
+			printf("Error: variable caanot be declared\n");
+			exit(1);
+		}
+	}
+}
+
+int new = 0;
+
+int registerLocalVar(char* varName, int lineNum, int input)
 {
 	int i = 0;
 	int* result = NULL;
@@ -695,67 +854,46 @@ int registerVar(char* varName, int lineNum, int dim)
 	}
 	name[j] = '\0';
 	j++;
+	i = 0;
 
-	//dim == 2 -> table 0, 1 both should be checked
-	if(dim == 1)
+	for( ; i< 100 != -1 ; i++)
 	{
-		for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1 ; i++)
+		if(strcmp(table_local[i].varName, (const char*)name) ==0 && table_local[i].lineNum <= lineNum)
 		{
-		//	while(varName[j] != '\0')
-		//	{	printf("reg name: %d ", varName[j]);	j++;}
-		//	table_0[i].varName[strlen(table_0[i].varName)-1] = '\0';
-		//	varName[strlen(varName)-1] = '\0';
-			if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
-			{
-				return i;
-			}
+			return i;
 		}
-		strcpy(table_0[i].varName, (const char*)name);
-		printf("count var %d\n", i);
-		int k = 0;
-		while(k<j)
-			printf("reg check %d\n", table_0[i].varName[k++]);
-		table_0[i].lineNum = lineNum;
-		table_0[i].value = 0;
-		table_0[i].used = FALSE;
-		return i;
-	}
-	else if(dim == 2)
-	{
-		//?´ë? ì¡´ìž¬?˜ëŠ”ì§€ ì²´í¬
-		for(i=0 ; i< 999 && table_0[i].used != -1 ; i++)
-		{
-			if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
-			{
-				return -1;
-			}
-		}
-
-		for(i = 0; i<999 && table_1[i].used != -1; i++)
-		{
-			if(strcmp(table_1[i].arrayName, (const char*)name) ==0 && table_1[i].lineNum <= lineNum)
-			{
-				return -1;
-			}
-		}
-	//?†ìœ¼ë©??ì„±
-		strcpy(table_1[i].arrayName, (const char*)name);
-		table_1[i].lineNum = lineNum;
-		table_1[i].used = FALSE;
-		return i;
-	}else
-	{
-		printf("regster variable error\n");
-		exit(1);
 	}
 
+	if(input == TRUE)
+	{
+		return -1;
+	}
+	strcpy(table_0[i].varName, (const char*)name);
+	
+	//printf("count var %d\n", i);
+	//int k = 0;
+	//while(k<j)
+	//	printf("reg check %d\n", table_0[i].varName[k++]);
+	
+	table_local[i].lineNum = lineNum;
+	table_local[i].value = 0;
+	table_local[i].used = FALSE;
+	new = 1;
+	return i;
 }
 
 void updateVar(int index, int value)
 {
 	table_0[index].value = value;
-	table_0[index].used = TRUE;
-	printf("update var name :%s, value: %d\n", table_0[index].varName, table_0[index].value);
+		table_0[index].used = TRUE;
+		//printf("update var name :%s, value: %d\n", table_0[index].varName, table_0[index].value);
+}
+
+void updateLocalVar(int index, int value)
+{
+	table_local[index].value = value;
+	table_local[index].used = TRUE;
+		//printf("update var name :%s, value: %d\n", table_0[index].varName, table_0[index].value);
 }
 
 void arrayBoundCheck(int tableIndex, int arrayIndex)
@@ -768,7 +906,7 @@ void arrayBoundCheck(int tableIndex, int arrayIndex)
 	}
 }
 
-void updateArray(int tableIndex, int arrayIndex, int value)
+void updateArray(int tableIndex, int arrayIndex, int value, int whileFlag)
 {
 	arrayBoundCheck(tableIndex, arrayIndex);
 	table_1[tableIndex].elem[arrayIndex].value = value;
@@ -802,9 +940,15 @@ void initVarTable_1()
 
 void runProgram()
 {
+
+	int localVar = FALSE;
+	//initWhileVar();
+	int whileFlag = FALSE;
+	int whileStart = 0;
+	int whileEnd = 0;
 	int tableSize = triple_table_size;
+//	printf("table size %d\n", tableSize);
 	int i = 0;
-	printf("table size %d\n", tableSize);
 	int result;
 	ast_node* temp_ast;
 	int varTableIdx = 0;
@@ -812,28 +956,62 @@ void runProgram()
 	int prevTrueFlag = FALSE;
 	while( i < tableSize)
 	{
-
 		temp_ast = triple_table[i]->CommandAst;
 		int type = temp_ast->type;
 		int subtype = temp_ast->subtype;
 		if(type == COMMAND_AST)
 		{
-		//printf("if flag 33 :%d\n", ifFlag);
 			printf("\n\n\n======%d=======\n\n", temp_ast->subtype);
+			printf("check pt-1`\n");
 			switch(subtype)
 			{
 			case GOTO_AST:
+			printf("check pt0\n");
 				i = line_checker(temp_ast->integerLine);
 				i--;
 			break;
-			case LET_AST1:
-				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1);
-				result = calculator(temp_ast, 0, triple_table[i]->num);
+			case LET_AST1:	printf("check pt1\n");
+				localVar = FALSE;
+printf("check pt2\n");
+				if(whileFlag == 0)
+				{
+					printf("check pt3\n");
+					printf("whileflag2 : %d\n", whileFlag);
+					varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1, whileFlag);	
+				}else
+				{
+					printf("check pt4\n");
+					printf("while true 1");
+					printf("check pt5\n");
+					varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1, whileFlag);
+					printf("while true 2");
+
+
+					if(varTableIdx < 0)
+					{
+						printf("while true 3");
+
+						varTableIdx = registerLocalVar(temp_ast->varName, triple_table[i]->num, 0);
+						localVar = TRUE;
+				//		printf("while true 1");
+
+					}
+				}
+			//	printf("local val: %d", localVar);
+				result = calculator(temp_ast, 0, triple_table[i]->num, localVar);
 			//	printf("result let : %d  %d\n ", result, triple_table[i]->num);
-				updateVar(varTableIdx, result);
+				if(localVar == FALSE)
+					updateVar(varTableIdx, result);
+				else if(localVar == TRUE)
+					updateLocalVar(varTableIdx, result);
 			//	printf("variable reg  %s\n", table_0[0].varName);
 				break;
 			case LET_AST2:
+				if(whileFlag == TRUE)
+				{
+					printf("Error: Array is not allowed in While-loop\n");
+					exit(1);
+				}
 			//	printf("let ast2 name %s\n\n", temp_ast->varName);
 				varTableIdx = findArrayName(temp_ast->varName, triple_table[i]->num);
 				if(varTableIdx < 0)
@@ -843,13 +1021,18 @@ void runProgram()
 				}else
 				{
 					int index = 0, value = 0;
-					index = calculator(temp_ast, 0, triple_table[i]->num);
-					value = calculator(temp_ast, 1, triple_table[i]->num);
-					updateArray(varTableIdx, index, value);
+					index = calculator(temp_ast, 0, triple_table[i]->num, whileFlag);
+					value = calculator(temp_ast, 1, triple_table[i]->num, whileFlag);
+					updateArray(varTableIdx, index, value, whileFlag);
 				}
 			break;
 			case DIM_AST:
-				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 2);
+				if(whileFlag == TRUE)
+				{
+					printf("Error: Array is not allowed in While-loop\n");
+					exit(1);
+				}
+				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 2, whileFlag);
 				if(varTableIdx == -1)
 				{
 					printf("Error: Variable is redeclared\n");
@@ -857,7 +1040,7 @@ void runProgram()
 				}else
 				{
 					int size = 0;
-					size = calculator(temp_ast, 0, triple_table[i]->num);
+					size = calculator(temp_ast, 0, triple_table[i]->num, whileFlag);
 					if(size > 0)
 					{
 						table_1[varTableIdx].elem = (arrayElem*)(malloc(sizeof(arrayElem)*size));
@@ -871,17 +1054,52 @@ void runProgram()
 				//	printf("size: %d success 1d array", table_1[varTableIdx].size);
 				}
 			break;
-			case INPUT_AST: varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1);
-					printf("intput");
-					scanf("%d", &result);
-					updateVar(varTableIdx, result);
-			break;
+			case INPUT_AST:
+					if(whileFlag == FALSE)
+					{
+						varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1, TRUE);
+						if(varTableIdx < 0)
+						{
+							printf("Error: variable should be declared before\n");
+							exit(1);
+						}else
+						{
+							printf("?");
+							scanf("%d", &result);
+							updateVar(varTableIdx, result);
+						}
+					}else
+					{
+						varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1, TRUE);
+						if(varTableIdx < 0)
+						{
+	
+							varTableIdx = registerLocalVar(temp_ast->varName, triple_table[i]->num, 1);
+							if(varTableIdx < 0)
+							{
+								printf("Error: Variable should be declared before\n");
+								exit(1);
+							}else
+							{
+								printf("?");
+								scanf("%d", &result);
+								updateLocalVar(varTableIdx, result);
+							}
+						}else
+						{
+							printf("?");
+							scanf("%d", &result);
+							updateVar(varTableIdx, result);
+						}
+					}
+
+					break;
 			case PRINT_TEXT_AST:
-				printf("\n\n%s\n\n", temp_ast->string);
+				printf("\n%s\n", temp_ast->string);
 			break;
 			case PRINT_AST:
-				result = calculator(temp_ast, 0, triple_table[i]->num);
-				printf("\n\n%d\n\n", result);
+				result = calculator(temp_ast, 0, triple_table[i]->num, whileFlag);
+				printf("\n%d\n", result);
 			break;
 			}
 			ifFlag = FALSE;
@@ -891,21 +1109,21 @@ void runProgram()
 			switch(subtype)
 			{
 			case IFTHEN_AST	:
-				result = calculator(temp_ast, 0, triple_table[i]->num);
+				result = calculator(temp_ast, 0, triple_table[i]->num, whileFlag);
 				if(result != 0)
 				{
-					printf("if true\n");
+					//printf("if true\n");
 					i = line_checker(temp_ast->integerLine);
 					i--;
 					ifFlag = FALSE;
 					prevTrueFlag = TRUE;
 				}else
 				{
-					printf("if false::\n");
+				//	printf("if false::\n");
 					ifFlag = TRUE;
 					prevTrueFlag = FALSE;
 				}
-						printf("if flag 2 :%d\n", ifFlag);
+					//	printf("if flag 2 :%d\n", ifFlag);
 				break;
 			case IFELSE_AST	:
 				if(ifFlag == FALSE)
@@ -918,17 +1136,17 @@ void runProgram()
 					break;
 				}else if(prevTrueFlag == FALSE)
 				{
-					result = calculator(temp_ast, 0, triple_table[i]->num);
+					result = calculator(temp_ast, 0, triple_table[i]->num, whileFlag);
 					if(result != 0)
 					{
-						printf("else if true\n");
+					//	printf("else if true\n");
 						i = line_checker(temp_ast->integerLine);
 						i--;
 						ifFlag = FALSE;
 						prevTrueFlag = TRUE;
 					}else
 					{
-						printf("else if false::\n");
+					//	printf("else if false::\n");
 						ifFlag = TRUE;
 						prevTrueFlag = FALSE;
 					}
@@ -947,7 +1165,7 @@ void runProgram()
 				}
 				if(prevTrueFlag == FALSE)
 				{
-					printf("else true\n");
+				//	printf("else true\n");
 						i = line_checker(temp_ast->integerLine);
 						i--;
 						ifFlag = FALSE;
@@ -957,25 +1175,72 @@ void runProgram()
 				ifFlag = FALSE;
 				break;
 			}
-		}else
+		}else if(type == WHILE_AST)
 		{
-			printf("run programm error1 %d\n", type);
+			whileFlag = TRUE;
+			if(subtype == WHILE_IF_AST)
+			{
+				whileStart = i;
+			//	printf("while start %d\n", i);
+				int k = 0;
+				int j = 0;
+				for(j = 0; j< loop_range_size; j++)
+				{
+					if(loop_range_table[j]->start_num == triple_table[i]->num)
+					{
+						whileEnd = loop_range_table[j]->end_num;
+				//		printf("while end from loop range %d\n", whileEnd);
+						for(k = 0; k< triple_table_size;k++)
+						{
+							if(triple_table[k]->num == whileEnd)
+							{	whileEnd = k;	break;}
+						}
+					}
+				}
+				//printf("while expression: %d\n", temp_ast->expr1.elem[2].op);
+				result = calculator(temp_ast, 0, triple_table[i]->num, whileFlag);
+				printf("while condition: %d\n", result);
+
+				if(result == 0)
+				{
+
+					i = whileEnd;
+					
+					printf("while end %d\n", whileEnd);
+					//initWhileVar();
+					whileFlag = FALSE;
+				}
+			}else if(subtype == END_WHILE)
+			{
+				i = whileStart;
+			//	printf("while start %d\n", whileStart);
+				i--;
+	//			i--;
+			}
+		}
+		else
+
+		{
+			printf("Error: run programm\n");
+			exit(1);
 			return;
 		}
 		i++;
 	}
 }
+
 int line_checker(int linenum)
 {
 	int i;
 	int find = 0;
+	int result = -1;
 	if(triple_table_size>0)
 	{
 		for(i=0;i<triple_table_size;i++)
 		{
 			if(linenum==triple_table[i]->num)
 			{
-				return i;
+				result = i;
 			}
 		}
 	}
@@ -986,13 +1251,18 @@ int line_checker(int linenum)
 			if(linenum<loop_range_table[i]->end_num&&linenum>loop_range_table[i]->start_num)
 			{
 				printf("RUNTIME Error: GOTO cannot into While loop\n");
-				return -1;
+				exit(1);
 			}
 		}
 	}
-
-	printf("RUNTIME Error: undefined line \n");
-	return -1;
+	if(result < 0)
+	{
+		printf("RUNTIME Error: undefined line \n");
+		exit(1);
+	}else
+	{
+		return result;
+	}
 }
 
 void loop_range_make(int start,int end)
@@ -1006,9 +1276,8 @@ void loop_range_make(int start,int end)
 	printf("\nloop_info: %d %d\n",new_loop_range->start_num, new_loop_range->end_num);
 }
 
-int integer_checker(char* num_str)
+int integer_checker(int num)
 {
-	int num = atoi(num_str);
 	if(num<-2147483648||num>2147483647)
 	{
 		printf("RUNTIME Error: integer overflow\n");
