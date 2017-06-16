@@ -87,8 +87,8 @@ command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);printf("This is d comment\n")
 	| PRINT text				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, PRINT_TEXT_AST, NULL, $2);}
 	| INPUT VAR				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, INPUT_AST, $2, NULL); printf("input var %s\n", $2);}
 	| ifstmt				{strcpy($$,$1); nodeG = TRUE; astGen(IFSTMT_AST,IFTHEN_AST, NULL, NULL); }
-	| WHILE IF expr				{sprintf($$,"%s %s %s",$1,$2, $3);}
-	| END WHILE				{sprintf($$,"%s %s",$1,$2);}
+	| WHILE IF expr				{sprintf($$,"%s %s %s",$1,$2, $3);nodeG = TRUE; astGen(WHILE_AST,WHILE_IF_AST, NULL, NULL); }
+	| END WHILE				{sprintf($$,"%s %s",$1,$2);nodeG = TRUE; astGen(WHILE_AST,END_WHILE, NULL, NULL); }
 	;
 
 ifstmt	: IF expr THEN INTEGER		{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("ifstmt : %s \n",$$);}

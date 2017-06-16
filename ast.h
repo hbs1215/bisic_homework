@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//5:25 
+//5:25
 #define COMMAND_AST		4
 #define GOTO_AST		5
 #define LET_AST1		10
@@ -204,15 +204,43 @@ void printExpr()
 
 void make_triple(int line_num, char* command)
 {
-   triple_table_size++;
-      triple* new_triple = malloc(sizeof(triple));
-      new_triple->num = line_num;
-      new_triple->string = command;
-      triple_table = realloc(triple_table, sizeof(triple)*(triple_table_size+1));
-   triple_table[triple_table_size-1] = new_triple;
-   new_triple->CommandAst = curAST;
-   new_triple->index = triple_table_size - 1;
-   printf("\ntriple_info: %d %s\n",new_triple->num, new_triple->string);
+	triple_table_size++;
+	triple* new_triple = malloc(sizeof(triple));
+	new_triple->num = line_num;
+ 	new_triple->string = command;
+	triple_table = realloc(triple_table, sizeof(triple)*(triple_table_size+1));
+	new_triple->CommandAst = curAST;
+	new_triple->index = triple_table_size - 1;
+	printf("\ntriple_info: %d %s\n",new_triple->num, new_triple->string);
+
+	if(new_triple->CommandAst->type==WHILE_AST)
+	{
+		if(new_triple->CommandAst->subtype==WHILE_IF_AST)
+		{
+			loop_range_size++;
+			loop_range* new_loop_range = malloc(sizeof(loop_range));
+			new_loop_range->start_num = line_num;
+			new_loop_range->match = 0;
+			loop_range_table = realloc(loop_range_table, sizeof(loop_range)*(loop_range_size+1));
+			loop_range_table[loop_range_size-1] = new_loop_range;
+			printf("\nloop_info: %d \n",new_loop_range->start_num);
+		}
+		else if(new_triple->CommandAst->subtype==END_WHILE)
+		{
+			if(loop_range_size<1||loop_range_table[loop_range_size-1]->match!=0)
+			{
+				printf("Error: no matched loop\n");
+				return;
+			}
+			else if(loop_range_table[loop_range_size-1]->match==0)
+			{
+				loop_range_table[loop_range_size-1]->match = 1;
+				loop_range_table[loop_range_size-1]->end_num = line_num;
+				printf("\nloop_info: %d %d\n",loop_range_table[loop_range_size-1]->start_num, loop_range_table[loop_range_size-1]->end_num);
+			}
+		}
+	}
+	triple_table[triple_table_size-1] = new_triple;
 }
 
 void astGen(int type, int subtype, char* commandVar, char* text)
@@ -257,7 +285,7 @@ void astGen(int type, int subtype, char* commandVar, char* text)
 			break;
 		case END_WHILE :
 			break;
-		
+
 		}
 	}else
 	{
@@ -283,7 +311,7 @@ int* findVar(char* varName, int lineNum)
 	name[j] = '\0';
 	j++;
 
-	
+
 	for( ; i< sizeof(table_0)/sizeof(varTable_0) && table_0[i].used != -1; i++)
 	{
 		//	int j = 0;
@@ -328,7 +356,7 @@ int findArrayName(char* varName, int lineNum)
 	name[j] = '\0';
 	j++;
 
-	
+
 	for(i=0 ; i< 999 && table_1[i].used != -1; i++)
 	{
 		printf("\n\nhi\n\n");
@@ -650,11 +678,11 @@ int registerVar(char* varName, int lineNum, int dim)
 		table_0[i].lineNum = lineNum;
 		table_0[i].value = 0;
 		table_0[i].used = FALSE;
-		return i;	
+		return i;
 	}
 	else if(dim == 2)
 	{
-		//이미 존재하는지 체크
+		//?��? 존재?�는지 체크
 		for(i=0 ; i< 999 && table_0[i].used != -1 ; i++)
 		{
 			if(strcmp(table_0[i].varName, (const char*)name) ==0 && table_0[i].lineNum <= lineNum)
@@ -670,7 +698,7 @@ int registerVar(char* varName, int lineNum, int dim)
 				return -1;
 			}
 		}
-	//없으면 생성
+	//?�으�??�성
 		strcpy(table_1[i].arrayName, (const char*)name);
 		table_1[i].lineNum = lineNum;
 		table_1[i].used = FALSE;
@@ -777,7 +805,7 @@ void runProgram()
 				if(varTableIdx == -1)
 				{
 					printf("Error: Variable is redeclared\n");
-					exit(1);					
+					exit(1);
 				}else
 				{
 					int size = 0;
