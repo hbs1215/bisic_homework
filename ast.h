@@ -10,10 +10,11 @@
 #define PRINT_TEXT_AST		20
 #define PRINT_AST		21
 #define INPUT_AST		25
+
 #define IFSTMT_AST		30
 #define IFTHEN_AST		35
 #define IFELSE_AST		40
-#define ELSEIF_AST		45
+#define ELSE_AST		45
 
 #define WHILE_AST		46
 #define WHILE_IF_AST	47
@@ -272,10 +273,17 @@ void astGen(int type, int subtype, char* commandVar, char* text)
 		case INPUT_AST:
 			curAST->varName = strdup(commandVar);
 			break;
-		case IFSTMT_AST :
+		case IFTHEN_AST :
 			curAST->expr1 = *curNode1;
 			curAST->integerLine = curNode1->elem[curNode1->count-1].value;
 			break;
+		case IFELSE_AST :
+			curAST->expr1 = *curNode1;
+			curAST->integerLine = curNode1->elem[curNode1->count-1].value;
+			break;
+		case ELSE_AST :
+			curAST->integerLine = curNode1->elem[curNode1->count-1].value;
+			break;						
 		case PRINT_TEXT_AST : curAST->string = strdup(text);
 			printf("ast comment: %s\n", curAST->string);
 			break;
@@ -412,7 +420,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 	printf("cur AST type : %d\n", curAST->type);
 	if(curAST->type == COMMAND_AST || curAST->type == IFSTMT_AST)
 	{
-		if(type == LET_AST1||type==DIM_AST||type==IFSTMT_AST||type==PRINT_AST||type==LET_AST2|| type == GOTO_AST)
+		if(type == LET_AST1||type==DIM_AST||type==IFTHEN_AST || type == IFELSE_AST ||type==PRINT_AST||type==LET_AST2|| type == GOTO_AST)
 		{
 			int i = 0;
 			int oprCount = 0;
@@ -458,7 +466,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 				}else if(temp.elem[i].opType == BINARY)
 				{
 					printf("opr1: %d, opr2: %d\n", operand[oprCount-2], operand[oprCount-1]);
-
+					printf("op: %d\n\n", temp.elem[i].op);
 					switch(temp.elem[i].op)
 					{
 						case PLUS_AST: tempResult = operand[oprCount-2] + operand[oprCount-1];
@@ -479,27 +487,28 @@ int calculator(ast_node* curAST, int count, int lineNum)
 								else
 									tempResult = 0;
 								break;
-						case INEQUAL_AST: if(operand[oprCount-2] != operand[oprCount-1])
-									tempResult = 1;
-								  else
-									tempResult = 0;
+						case INEQUAL_AST: if(operand[oprCount-2] != operand[oprCount-1]){
+									tempResult = 1;}
+								  else{
+									tempResult = 0;}
 								break;
-						case GREAT_AST: if(operand[oprCount-2] > operand[oprCount-1])
-									tempResult = 1;
-								else
+						case GREAT_AST: if(operand[oprCount-2] < operand[oprCount-1]){
+									tempResult = 1;}
+								else{
 									tempResult = 0;
+								}
 								break;
-						case SMALLER_AST: if(operand[oprCount-2] < operand[oprCount-2])
-									tempResult = 1;
-								  else
-									tempResult = 0;
+						case SMALLER_AST: if(operand[oprCount-2] > operand[oprCount-1]){
+									tempResult = 1;}
+								  else{
+									tempResult = 0;}
 								break;
-						case GREATEQUAL_AST: if(operand[oprCount-2] >= operand[oprCount-2])
+						case GREATEQUAL_AST: if(operand[oprCount-2] <= operand[oprCount-1])
 									tempResult = 1;
 								     else
 									tempResult = 0;
 								     break;
-						case SMALLEQUAL_AST:if(operand[oprCount-2] <= operand[oprCount-2])
+						case SMALLEQUAL_AST:if(operand[oprCount-2] >= operand[oprCount-1])
 									tempResult = 1;
 								    else
 									tempResult = 0;
@@ -509,6 +518,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 					}
 					oprCount = oprCount-2;
 					operand[oprCount] = tempResult;
+					printf("tempResult : %d", tempResult);
 					oprCount++;
 
 				}else if(temp.elem[i].opType == UNARY)
@@ -764,13 +774,17 @@ void runProgram()
 	int result;
 	ast_node* temp_ast;
 	int varTableIdx = 0;
+	int ifFlag = FALSE;
+	int prevTrueFlag = FALSE;
 	while( i < tableSize)
 	{
+
 		temp_ast = triple_table[i]->CommandAst;
 		int type = temp_ast->type;
 		int subtype = temp_ast->subtype;
 		if(type == COMMAND_AST)
 		{
+		//printf("if flag 33 :%d\n", ifFlag);
 			printf("\n\n\n======%d=======\n\n", temp_ast->subtype);
 			switch(subtype)
 			{
@@ -786,7 +800,7 @@ void runProgram()
 			//	printf("variable reg  %s\n", table_0[0].varName);
 				break;
 			case LET_AST2:
-				printf("let ast2 name %s\n\n", temp_ast->varName);
+			//	printf("let ast2 name %s\n\n", temp_ast->varName);
 				varTableIdx = findArrayName(temp_ast->varName, triple_table[i]->num);
 				if(varTableIdx < 0)
 				{
@@ -820,7 +834,7 @@ void runProgram()
 					}
 					table_1[varTableIdx].size = size;
 
-					printf("size: %d success 1d array", table_1[varTableIdx].size);
+				//	printf("size: %d success 1d array", table_1[varTableIdx].size);
 				}
 			break;
 			case INPUT_AST: varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1);
@@ -836,14 +850,79 @@ void runProgram()
 				printf("\n\n%d\n\n", result);
 			break;
 			}
+			ifFlag = FALSE;
+			prevTrueFlag = FALSE;
 		}else if(type == IFSTMT_AST)
 		{
+			switch(subtype)
+			{
+			case IFTHEN_AST	:
+				result = calculator(temp_ast, 0, triple_table[i]->num);
+				if(result != 0)
+				{
+					printf("if true\n");
+					i = line_checker(temp_ast->integerLine);
+					i--;
+					ifFlag = FALSE;
+					prevTrueFlag = TRUE;
+				}else
+				{
+					printf("if false::\n");
+					ifFlag = TRUE;
+					prevTrueFlag = FALSE;
+				}
+						printf("if flag 2 :%d\n", ifFlag);
+				break;
+			case IFELSE_AST	:
+				if(ifFlag == FALSE)
+				{
+					printf("Error: missing if\n");
+					exit(1);
+				}
+				if(prevTrueFlag == TRUE)
+				{
+					break;
+				}else if(prevTrueFlag == FALSE)
+				{
+					result = calculator(temp_ast, 0, triple_table[i]->num);
+					if(result != 0)
+					{
+						printf("else if true\n");
+						i = line_checker(temp_ast->integerLine);
+						i--;
+						ifFlag = FALSE;
+						prevTrueFlag = TRUE;
+					}else
+					{
+						printf("else if false::\n");
+						ifFlag = TRUE;
+						prevTrueFlag = FALSE;
+					}
+				}else
+				{
+					printf("Error if-statment\n");
+					exit(1);
+				}
+	
+				break; 
+			case ELSE_AST:
+				if(ifFlag == FALSE)
+				{
+					printf("Error: missing if\n");
+					exit(1);
+				}
+				if(prevTrueFlag == FALSE)
+				{
+					printf("else true\n");
+						i = line_checker(temp_ast->integerLine);
+						i--;
+						ifFlag = FALSE;
+						prevTrueFlag = TRUE;
 
-
-
-		}else if(type == DECL_AST)
-		{
-
+				}
+				ifFlag = FALSE;
+				break;
+			}
 		}else
 		{
 			printf("run programm error1 %d\n", type);
