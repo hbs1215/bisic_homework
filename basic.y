@@ -53,7 +53,7 @@ extern FILE * yyin;
 %token <string> CLOSE
 
 %token <string> END
-%token <string> FUNCTION
+%token <string> WHILE
 
 %type <digit> INTEGER
 %type <string> text
@@ -87,8 +87,8 @@ command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);printf("This is d comment\n")
 	| PRINT text				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, PRINT_TEXT_AST, NULL, $2);}
 	| INPUT VAR				{sprintf($$,"%s %s",$1,$2); nodeG = TRUE; astGen(COMMAND_AST, INPUT_AST, $2, NULL); printf("input var %s\n", $2);}
 	| ifstmt				{strcpy($$,$1); nodeG = TRUE; astGen(IFSTMT_AST,IFTHEN_AST, NULL, NULL); }
-	| END FUNCTION				{sprintf($$,"%s %s",$1,$2);}
-	| FUNCTION				{sprintf($$,"%s",$1);}
+	| WHILE IF expr				{sprintf($$,"%s %s %s",$1,$2, $3);}
+	| END WHILE				{sprintf($$,"%s %s",$1,$2);}
 	;
 
 ifstmt	: ifstmt ifterm	ELSE THEN INTEGER	{sprintf($$,"%s %s %s %s %d",$1,$2,$3,$4,$5);printf("ifstmt : %s \n",$$);}

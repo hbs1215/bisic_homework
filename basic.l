@@ -34,7 +34,7 @@ rinside		[0-9a-zA-Z\ .*]+
 
 goto		(GOTO[[:space:]])
 
-function	(FUNCTION)
+while	(WHILE)
 end		(END[[:space:]])
 
 let		(LET[[:space:]])
@@ -62,7 +62,7 @@ space		[[:space:]]+
 {digit}		{yylval.digit = atoi(yytext); return DIGIT;}
 {rstart}	{BEGIN(comment); return REM;}
 {goto}{space}*		{yylval.string = strdup(yytext);  return GOTO;}
-{function}{space}*	{yylval.string = strdup(yytext);  return FUNCTION;}
+{while}{space}*	{yylval.string = strdup(yytext);  return WHILE;}
 {end}{space}*		{yylval.string = strdup(yytext); return END;}
 
 <comment>{rstop}	{BEGIN(INITIAL); return *yytext;}
