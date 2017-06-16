@@ -49,7 +49,7 @@ typedef struct varTable_0 varTable_0;
 typedef struct varTable_1 varTable_1;
 typedef struct element element;
 typedef struct expr_node expr_node;
-typedef struct arrayElem;
+typedef struct arrayElem arrayElem;
 
 void triple_sort();
 void exprNodeGen(int op, char* varName, int opType, int value);
@@ -58,7 +58,7 @@ void make_triple(int line_num, char* command);
 void astGen(int type, int subtype, char* commandVar, char* text);
 void divideZero(int num);
 int is_number(char* str);
-int registerVar(char* varName, int lineNum);
+int registerVar(char* varName, int lineNum, int dim);
 void runProgram();
 void initVarTable_0();
 void show_document();
@@ -543,7 +543,7 @@ void triple_sort()
 	}
 }
 
-int registerVar(char* varName, int lineNum)
+int registerVar(char* varName, int lineNum, int dim)
 {
 	int i = 0;
 	int* result = NULL;
@@ -620,7 +620,7 @@ void runProgram()
 
 			break;
 			case LET_AST1:
-				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num);
+				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1);
 				result = calculator(temp_ast, 0, triple_table[i]->num);
 			//	printf("result let : %d  %d\n ", result, triple_table[i]->num);
 				updateVar(varTableIdx, result);
@@ -632,7 +632,7 @@ void runProgram()
 			case DIM_AST:
 
 			break;
-			case INPUT_AST: varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num);
+			case INPUT_AST: varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1);
 					printf("intput");
 					scanf("%d", &result);
 					updateVar(varTableIdx, result);
