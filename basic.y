@@ -168,7 +168,10 @@ int main(int argc, char** argv)
 		printf("Error: opening file %s\n", argv[1]);
 		return 0;
 	}	
-
+	else
+	{
+		printf("Open %s",filename);
+	}
 	yyparse();
 	
 	char user_input[20];
