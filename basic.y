@@ -64,6 +64,7 @@ extern FILE * yyin;
 %type <string> term
 %type <string> ifstmt
 %type <string> bracket
+%type <string> ifterm
 
 %%
 
@@ -86,8 +87,14 @@ command : REM COMMENT				{sprintf($$,"%s%s",$1,$2);printf("This is d comment\n")
 	| ifstmt				{strcpy($$,$1); nodeG = TRUE; astGen(IFSTMT_AST,IFTHEN_AST, NULL, NULL); }
 	;
 
-ifstmt	: IF expr THEN INTEGER		{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("if then \n");}
+ifstmt	: ifstmt ifterm	ELSE THEN INTEGER	{sprintf($$,"%s %s %s %s %d",$1,$2,$3,$4,$5);printf("ifstmt : %s \n",$$);}
+	| IF expr THEN INTEGER			{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("if then \n");}
 	;
+	
+ifterm	: ifterm ELSEIF expr THEN INTEGER	{sprintf($$,"%s %s %s %s %d",$1,$2,$3,$4,$5);printf("ifterm : %s \n",$$);}
+	| ELSEIF expr THEN INTEGER		{sprintf($$,"%s %s %s %d",$1,$2,$3,$4);printf("ifstmt : %s \n",$$);}
+	;
+	
 text	: STRING			{strcpy($$,$1);printf("stirng bison\n");}
 	;
 
