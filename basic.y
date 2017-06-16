@@ -160,7 +160,7 @@ int main(int argc, char** argv)
 	}	
 
 	yyparse();
-	initVarTable_0();	
+	
 	char user_input[20];
 	int line;
 	
@@ -180,6 +180,7 @@ int main(int argc, char** argv)
 			show_line(atoi(user_input));
 		}
 		else if(!strcmp(user_input,"RUN") ){
+			initVarTable_0();
 			runProgram();	
 		}
 		else if(!strcmp(user_input,"QUIT") )
