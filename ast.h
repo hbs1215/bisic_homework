@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//2:25
+//2:25 
 #define COMMAND_AST		4
 #define GOTO_AST		5
 #define LET_AST1		10
@@ -46,9 +46,10 @@
 typedef struct ast_node ast_node;
 typedef struct triple triple;
 typedef struct varTable_0 varTable_0;
+typedef struct varTable_1 varTable_1;
 typedef struct element element;
 typedef struct expr_node expr_node;
-
+typedef struct arrayElem;
 
 void triple_sort();
 void exprNodeGen(int op, char* varName, int opType, int value);
@@ -75,6 +76,21 @@ typedef struct varTable_0
 	int value;
 	int lineNum;
 }varTable_0;
+
+typedef struct arrayElem
+{
+	int value;
+	int index;
+}arrayElem;
+
+typedef struct varTable_1
+{
+	arrayElem* elem;
+	int size;
+	char arrayName[30];
+	int lineNum;
+}varTable_1;
+	
 
 typedef struct element
 {
@@ -116,6 +132,7 @@ struct triple
 
 //variable
 varTable_0 table_0[999];
+varTable_1 table_1[999];
 triple** triple_table;
 int triple_table_size=0;
 ast_node* curAST;
