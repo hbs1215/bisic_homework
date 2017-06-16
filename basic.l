@@ -34,6 +34,9 @@ rinside		[0-9a-zA-Z\ .*]+
 
 goto		(GOTO[[:space:]])
 
+function	(FUNCTION)
+end		(END[[:space:]])
+
 let		(LET[[:space:]])
 input		(INPUT[[:space:]])
 dim		(DIM[[:space:]])
@@ -44,7 +47,8 @@ if		(IF[[:space:]])
 then		(THEN[[:space:]])
 else		(ELSE[[:space:]])
 elseif		(ELSEIF[[:space:]])
-endif		(ENDIF[[:space:]])
+
+
 
 dquote		\"
 dinside		[^"]+
@@ -57,7 +61,9 @@ space		[[:space:]]+
 {newLine}	{printf("new line\n");yylval.string = strdup(yytext); return NEWLINE;}
 {digit}		{yylval.digit = atoi(yytext); return DIGIT;}
 {rstart}	{BEGIN(comment); return REM;}
-{goto}{space}*	{yylval.string = strdup(yytext);  return GOTO;}
+{goto}{space}*		{yylval.string = strdup(yytext);  return GOTO;}
+{function}{space}*	{yylval.string = strdup(yytext);  return FUNCTION;}
+{end}{space}*		{yylval.string = strdup(yytext); return END;}
 
 <comment>{rstop}	{BEGIN(INITIAL); return *yytext;}
 <comment>{rinside}	{return COMMENT;}
@@ -85,7 +91,7 @@ space		[[:space:]]+
 {if}{space}*			{ yylval.string = strdup(yytext); return IF;}
 {then}{space}*			{ yylval.string = strdup(yytext); return THEN;}
 {else}{space}*			{ yylval.string = strdup(yytext); return ELSE;}
-{endif}{space}*			{ yylval.string = strdup(yytext); return ENDIF;}
+
 {elseif}{space}*		{ yylval.string = strdup(yytext); return ELSEIF;}
 
 {print_command}{space}*		{ yylval.string = strdup(yytext); return PRINT;}
