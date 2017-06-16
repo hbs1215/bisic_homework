@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-//2:25 
+//2:25
 #define COMMAND_AST		4
 #define GOTO_AST		5
 #define LET_AST1		10
@@ -50,6 +50,7 @@ typedef struct varTable_1 varTable_1;
 typedef struct element element;
 typedef struct expr_node expr_node;
 typedef struct arrayElem arrayElem;
+typedef struct loop_range loop_range;
 
 void triple_sort();
 void exprNodeGen(int op, char* varName, int opType, int value);
@@ -94,7 +95,7 @@ typedef struct varTable_1
 	int used;
 
 }varTable_1;
-	
+
 
 typedef struct element
 {
@@ -124,6 +125,12 @@ struct ast_node
 	ast_node* child;
 };
 
+struct loop_range
+{
+   int start_num;
+   int end_num;
+   int match;
+};
 
 struct triple
 {
@@ -147,6 +154,8 @@ expr_node* temp;
 int nodeG = TRUE;
 int nodeG2 = FALSE;
 
+loop_range** loop_range_table;
+int loop_range_size=0;
 
 //function
 void exprNodeGen(int op, char* varName, int opType, int value)
@@ -492,7 +501,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 	}
 	printf("checkc\n");
 	result = operand[0];
-	
+
 	return result;
 }
 
@@ -575,7 +584,7 @@ void show_line(int request_num)
 void triple_sort()
 {
 	int i,j,k;
-
+	int temp_index;
 	triple * temp;
 	for(i=0;i<triple_table_size;i++)
 	{
@@ -584,8 +593,11 @@ void triple_sort()
 			if(triple_table[i]->num > triple_table[j]->num)
 			{
 				temp = triple_table[i];
+				temp_index = triple_table[i]->index;
+				triple_table[i]->index = triple_table[j]->index;
 				triple_table[i] = triple_table[j];
 				triple_table[j] = temp;
+				triple_table[j]->index = temp_index;
 			}
 		}
 	}
@@ -817,8 +829,31 @@ int line_checker(int linenum)
 			}
 		}
 	}
-	
+	if(loop_range_size>0)
+	{
+		for(i=0;i<loop_range_size;i++)
+		{
+			if(linenum<loop_range_table[i]->end_num&&linenum>loop_range_table[i]->start_num)
+			{
+				printf("RUNTIME Error: undefined line \n");
+				return -1;
+			}
+		}
+	}
+
+	printf("RUNTIME Error: undefined line \n");
 	return -1;
+}
+
+void loop_range_make(int start,int end)
+{
+	loop_range_size++;
+    loop_range* new_loop_range = malloc(sizeof(loop_range));
+	new_loop_range->start_num = start;
+	new_loop_range->end_num = end;
+	loop_range_table = realloc(loop_range_table, sizeof(loop_range)*(loop_range_size+1));
+	loop_range_table[loop_range_size-1] = new_loop_range;
+	printf("\nloop_info: %d %d\n",new_loop_range->start_num, new_loop_range->end_num);
 }
 
 int integer_checker(char* num_str)
