@@ -319,12 +319,12 @@ int calculator(ast_node* curAST, int count, int lineNum)
 	printf("cur AST type : %d\n", curAST->type);
 	if(curAST->type == COMMAND_AST || curAST->type == IFSTMT_AST)
 	{
-		if(type == LET_AST1||type==DIM_AST||type==IFSTMT_AST||type==PRINT_AST||type==LET_AST2)
+		if(type == LET_AST1||type==DIM_AST||type==IFSTMT_AST||type==PRINT_AST||type==LET_AST2|| type == GOTO_AST)
 		{
 			int i = 0;
 			int oprCount = 0;
 			int j = 0;
-
+			printf("count :%d\n", temp.count);
 			if(temp.count ==1)
 			{
 				if(temp.elem[0].opType == OPERAND)
@@ -445,6 +445,7 @@ int calculator(ast_node* curAST, int count, int lineNum)
 	}
 	printf("checkc\n");
 	result = operand[0];
+	
 	return result;
 }
 
@@ -617,7 +618,8 @@ void runProgram()
 			switch(subtype)
 			{
 			case GOTO_AST:
-
+				i = line_checker(temp_ast->integerLine);
+				i--;
 			break;
 			case LET_AST1:
 				varTableIdx = registerVar(temp_ast->varName, triple_table[i]->num, 1);
@@ -671,17 +673,12 @@ int line_checker(int linenum)
 		{
 			if(linenum==triple_table[i]->num)
 			{
-				find = 1;
+				return i;
 			}
 		}
 	}
-
-	if(find == 0)
-	{
-		printf("RUNTIME Error: undefined line number\n");
-		return -1;
-	}
-	else return 1;
+	
+	return -1;
 }
 
 int integer_checker(char* num_str)
