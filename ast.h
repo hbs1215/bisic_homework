@@ -579,8 +579,7 @@ int calculator(ast_node* curAST, int count, int lineNum, int whileFlag)
 								    else
 									tempResult = 0;
 								break;
-						default:
-							printf("worng check 8\n");
+						default:;
 					}
 					oprCount = oprCount-2;
 					operand[oprCount] = tempResult;
@@ -1266,14 +1265,14 @@ void integer_overflow_check(int a, int b, int c)
 	b= -b;
 
 	sum = a + b;
-	if (a >= 0) {
-		  	if (sum < a)
+	if (a >= 0&&b>=0) {
+		  	if (sum < a||sum<b)
 		   	{
 				printf("RUNTIME Error: integer overflow\n");
 				exit(1);
 			}
-	} else {
-		   	if (sum > a)
+	} else if(a<0 &&b<0){
+		   	if (sum > a||sum>b)
 		   	{
 				printf("RUNTIME Error: integer overflow\n");
 				exit(1);
